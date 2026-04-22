@@ -2,10 +2,11 @@
 import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
+import type { AppState } from "../lib/types";
 
 export default function Landing() {
   const t = useT("landing");
-  const setStep = useStore((s) => s.setStep);
+  const setStep = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
 
   return (
     <div
@@ -91,13 +92,29 @@ export default function Landing() {
           {t("subheadline")}
         </p>
 
-        <button
-          className="btn-primary"
-          style={{ fontSize: 18, padding: "14px 40px" }}
-          onClick={() => setStep("typeSelect")}
-        >
-          {t("start")} →
-        </button>
+        {/* 모드 선택 버튼 */}
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <button
+            className="btn-primary"
+            style={{ fontSize: 17, padding: "14px 36px" }}
+            onClick={() => setStep("typeSelect")}
+          >
+            📷 {t("start")}
+          </button>
+          <button
+            onClick={() => setStep("album")}
+            style={{
+              fontSize: 17, padding: "14px 36px", borderRadius: 12, cursor: "pointer",
+              border: "2px solid var(--accent)", background: "transparent",
+              color: "var(--accent2)", fontWeight: 700,
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(108,99,255,0.15)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            📚 스튜디오 앨범용
+          </button>
+        </div>
       </div>
 
       {/* How it works */}

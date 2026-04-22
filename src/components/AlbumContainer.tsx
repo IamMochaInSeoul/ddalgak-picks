@@ -395,23 +395,44 @@ export default function AlbumContainer() {
     await processSourceFolder(folderName, arr);
   }, [processSourceFolder]);
 
-  // ─── 드래그앤드롭 여러 폴더 동시 처리 ───
+  // ─── 드래그앤드롭 여러 폴더/파일 동시 처리 ───
   const handleFolderDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const items = Array.from(e.dataTransfer.items);
+    if (items.length === 0) return;
+
     const dirEntries: { name: string; entry: FileSystemDirectoryEntry }[] = [];
+    const fileEntries: FileSystemFileEntry[] = [];
+
     for (const item of items) {
       const entry = item.webkitGetAsEntry?.();
-      if (entry?.isDirectory) {
+      if (!entry) continue;
+      if (entry.isDirectory) {
         dirEntries.push({ name: entry.name, entry: entry as FileSystemDirectoryEntry });
+      } else if (entry.isFile) {
+        fileEntries.push(entry as FileSystemFileEntry);
       }
     }
-    if (dirEntries.length === 0) return;
-    // 순서대로 처리
-    for (const { name, entry } of dirEntries) {
-      const files = await readDirEntryFiles(entry);
-      await processSourceFolder(name, files);
+
+    if (dirEntries.length === 0 && fileEntries.length === 0) return;
+
+    if (dirEntries.length > 0) {
+      // 폴더 단위 처리: 각 폴더를 별도 세션으로
+      for (const { name, entry } of dirEntries) {
+        const files = await readDirEntryFiles(entry);
+        if (files.length > 0) await processSourceFolder(name, files);
+      }
+    } else {
+      // 폴백: 이미지 파일이 직접 드롭된 경우 → 단일 세션으로 처리
+      const files: File[] = [];
+      for (const fe of fileEntries) {
+        try {
+          const f = await new Promise<File>((res, rej) => fe.file(res, rej));
+          if (/\.(jpg|jpeg|png|heic|heif|webp|avif|tiff?)$/i.test(f.name)) files.push(f);
+        } catch { /* skip */ }
+      }
+      if (files.length > 0) await processSourceFolder("드롭된 사진", files);
     }
   }, [processSourceFolder]);
 
