@@ -1,0 +1,90 @@
+{
+  "landing": {
+    "headline": "Click. Keep Only the Best.",
+    "subheadline": "AI picks your best N photos from hundreds or thousands — in under 5 minutes",
+    "start": "Try for Free",
+    "howItWorks": "How it works",
+    "step1": "Upload Photos",
+    "step1desc": "Studio, travel, pets — drag & drop any folder",
+    "step2": "AI Analyzes",
+    "step2desc": "Auto-scores eye openness, sharpness, expression & pose — similar shots grouped together",
+    "step3": "Keep the Best",
+    "step3desc": "Download exactly the shots you need as a ZIP"
+  },
+  "typeSelect": {
+    "title": "What type of photos are you selecting?",
+    "subtitle": "AI analysis is optimized for your selection",
+    "portrait": "Portrait",
+    "portraitDesc": "Family, newborn, wedding — people as the subject",
+    "pet": "Pet",
+    "petDesc": "Dogs, cats, and other pet photos",
+    "mixed": "Mixed",
+    "mixedDesc": "People and pets together",
+    "next": "Next"
+  },
+  "upload": {
+    "title": "Select Your Photos",
+    "subtitle": "JPEG, PNG, HEIC, WebP supported · Up to 3,000 photos",
+    "dragDrop": "Drag a folder here or click to select",
+    "orClick": "Or click to choose files",
+    "selected": "{count} photos selected",
+    "targetCount": "How many photos do you need?",
+    "targetCountPlaceholder": "e.g. 50",
+    "analyze": "Start AI Analysis",
+    "back": "Back"
+  },
+  "analysis": {
+    "title": "AI Analyzing...",
+    "loadingModel": "Loading AI model",
+    "grouping": "Grouping similar shots",
+    "scoring": "Calculating quality scores",
+    "selecting": "Selecting best photos",
+    "done": "Analysis complete",
+    "processed": "Processing {current}/{total}"
+  },
+  "gallery": {
+    "title": "AI Selection Results",
+    "selected": "Selected",
+    "total": "Total",
+    "groups": "Groups",
+    "reextract": "Re-extract",
+    "reextractLeft": "Re-extractions left: {count}/5",
+    "reextractExhausted": "Re-extraction limit reached",
+    "confirm": "Confirm & Download",
+    "scoreDetail": "Score Detail",
+    "eyeOpen": "Eye Open",
+    "sharpness": "Sharpness",
+    "expression": "Expression",
+    "facing": "Facing",
+    "total_score": "Total",
+    "confidence": "Confidence",
+    "high": "Clear Winner",
+    "medium": "Moderate",
+    "low": "Multiple Similar Shots — Please Review",
+    "noSubject": "No Face Detected",
+    "eyeClosed": "Eyes Closed",
+    "blur": "Blurry",
+    "sideFace": "Side Face",
+    "lowConf": "Low Confidence",
+    "weightPanel": "Adjust Weights",
+    "filterPanel": "Filters",
+    "excludeEyeClosed": "Exclude Closed Eyes",
+    "excludeBlur": "Exclude Blurry",
+    "frontOnly": "Front-facing Only",
+    "excludeLowConf": "Exclude Low Confidence",
+    "back": "Start Over"
+  },
+  "export": {
+    "downloading": "Downloading...",
+    "done": "Done!",
+    "savedAs": "{count} photos saved as ZIP",
+    "fileList": "Copy File Names",
+    "copied": "Copied!"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "cancel": "Cancel"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "landing": {
+    "headline": "딸깍, 최고의 순간만 남긴다",
+    "subheadline": "수백~수천 장 사진 중 원하는 N장을 AI가 5분 안에 골라줍니다",
+    "start": "무료로 시작하기",
+    "howItWorks": "어떻게 작동하나요?",
+    "step1": "사진을 올린다",
+    "step1desc": "스튜디오·여행·반려동물 — 어떤 사진이든 드래그앤드롭",
+    "step2": "AI가 분석한다",
+    "step2desc": "눈뜸·선명도·표정·정면도를 자동 채점, 유사 컷은 묶어서 처리",
+    "step3": "최고만 남긴다",
+    "step3desc": "원하는 장수만큼 자동 선별 후 ZIP 다운로드"
+  },
+  "typeSelect": {
+    "title": "어떤 사진을 셀렉할까요?",
+    "subtitle": "선택에 따라 AI 분석 방식이 달라집니다",
+    "portrait": "인물 사진",
+    "portraitDesc": "가족·돌·웨딩 등 사람이 주인공인 사진",
+    "pet": "반려동물 사진",
+    "petDesc": "개·고양이 등 반려동물 사진",
+    "mixed": "혼합 사진",
+    "mixedDesc": "사람과 반려동물이 함께 나오는 사진",
+    "next": "다음"
+  },
+  "upload": {
+    "title": "사진을 선택하세요",
+    "subtitle": "JPEG, PNG, HEIC, WebP 지원 · 최대 3,000장",
+    "dragDrop": "폴더를 드래그하거나 클릭하여 선택",
+    "orClick": "또는 클릭하여 파일 선택",
+    "selected": "{count}장 선택됨",
+    "targetCount": "원하는 사진 수",
+    "targetCountPlaceholder": "예: 50",
+    "analyze": "AI 분석 시작",
+    "back": "뒤로"
+  },
+  "analysis": {
+    "title": "AI 분석 중...",
+    "loadingModel": "AI 모델 로딩 중",
+    "grouping": "유사 컷 그룹핑 중",
+    "scoring": "품질 점수 계산 중",
+    "selecting": "최적 사진 선별 중",
+    "done": "분석 완료",
+    "processed": "{current}/{total}장 처리 중"
+  },
+  "gallery": {
+    "title": "AI 선별 결과",
+    "selected": "선택됨",
+    "total": "전체",
+    "groups": "그룹",
+    "reextract": "재추출",
+    "reextractLeft": "재추출 남은 횟수: {count}/5",
+    "reextractExhausted": "재추출 횟수를 모두 사용했습니다",
+    "confirm": "선택 확정 및 다운로드",
+    "scoreDetail": "점수 상세",
+    "eyeOpen": "눈뜸",
+    "sharpness": "선명도",
+    "expression": "표정",
+    "facing": "정면도",
+    "total_score": "종합",
+    "confidence": "신뢰도",
+    "high": "확실한 최선",
+    "medium": "보통",
+    "low": "유사 컷 다수 — 직접 확인 권장",
+    "noSubject": "인물 미감지",
+    "eyeClosed": "눈감음",
+    "blur": "흔들림",
+    "sideFace": "측면",
+    "lowConf": "감지불확실",
+    "weightPanel": "가중치 조정",
+    "filterPanel": "필터",
+    "excludeEyeClosed": "눈감음 제외",
+    "excludeBlur": "흔들림 제외",
+    "frontOnly": "정면만",
+    "excludeLowConf": "저신뢰도 제외",
+    "back": "처음으로"
+  },
+  "export": {
+    "downloading": "다운로드 중...",
+    "done": "완료!",
+    "savedAs": "{count}장이 ZIP으로 저장되었습니다",
+    "fileList": "파일명 목록 복사",
+    "copied": "복사됨!"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "retry": "다시 시도",
+    "cancel": "취소"
+  }
+}
