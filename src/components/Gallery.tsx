@@ -7,6 +7,7 @@ import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
+import { clearSession } from "../lib/sessionPersist";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
@@ -48,6 +49,11 @@ export default function Gallery() {
   const setGroupSelected = useStore((s) => s.setGroupSelected);
   const togglePhotoSelected = useStore((s) => s.togglePhotoSelected);
 
+  // 세션 지속성
+  const filesDetached  = useStore((s) => s.filesDetached);
+  const reattachFiles  = useStore((s) => s.reattachFiles);
+  const setFilesDetached = useStore((s) => s.setFilesDetached);
+
   // 취향 재추출
   const groupScoresWithScene = useStore((s) => s.groupScoresWithScene);
   const preferenceSelected   = useStore((s) => s.preferenceSelected);
@@ -62,6 +68,7 @@ export default function Gallery() {
   const [copied, setCopied] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [reextracting, setReextracting] = useState(false);
+  const [reextractDoneCount, setReextractDoneCount] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<"selected" | "excluded" | "all">("selected");
   const [preferenceView, setPreferenceView] = useState<"ai" | "preference">("ai");
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
@@ -110,6 +117,23 @@ export default function Gallery() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // 파일 재첨부 (새로고침 후 ZIP 다운로드 복구)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleReattachClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+  const handleReattachChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    // window.__ddalgak_files 도 갱신해서 재추출도 가능하게
+    (window as unknown as Record<string, unknown>).__ddalgak_files = files;
+    reattachFiles(files);
+    // 모두 매칭되면 detached 해제 & 저장 클리어
+    setFilesDetached(false);
+    clearSession().catch(() => {});
+    e.target.value = "";
+  }, [reattachFiles, setFilesDetached]);
+
   const handlePhotoClick = useCallback((photoId: string) => setModalPhotoId(photoId), []);
   const handleContextMenu = useCallback((e: React.MouseEvent, photoId: string) => {
     e.preventDefault();
@@ -121,12 +145,17 @@ export default function Gallery() {
     const files = (window as unknown as Record<string, unknown>).__ddalgak_files as File[] | undefined;
     if (!files || !photoType) return;
     setReextracting(true);
+    setReextractDoneCount(null);
     incrementReextract();
     try {
       const result = await analyzePhotos(files, photoType, targetCount, weights, petWeights, filters,
         (current, total, stageKey) => setAnalysisProgress(current, total, stageKey), maxPerGroup);
       setPhotos(result.photos);
       setGroups(result.groups);
+      // 완료된 선택 장수 계산 후 toast 표시 (3초)
+      const selectedCount = [...result.photos.values()].filter((p) => p.isSelected).length;
+      setReextractDoneCount(selectedCount);
+      setTimeout(() => setReextractDoneCount(null), 3000);
     } catch (err) { console.error(err); }
     finally { setReextracting(false); }
   }, [canReextract, reextracting, photoType, targetCount, weights, petWeights, filters, maxPerGroup,
@@ -211,7 +240,7 @@ export default function Gallery() {
             </span>
             <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13, opacity: canReextract && !reextracting ? 1 : 0.4 }}
               disabled={!canReextract || reextracting} onClick={() => setShowPanel(!showPanel)}>
-              {t("reextract")} ⚙
+              ⚙ 조건 변경 & 재추출
             </button>
           </div>
           <LangToggle />
@@ -340,6 +369,48 @@ export default function Gallery() {
           </span>
         </div>
       </div>
+
+      {/* ── 파일 재첨부 배너 (새로고침 후 복구 시) ── */}
+      {filesDetached && (
+        <div style={{
+          margin: "12px 24px 0",
+          padding: "14px 18px",
+          background: "rgba(245,158,11,0.1)",
+          border: "1px solid rgba(245,158,11,0.4)",
+          borderLeft: "4px solid #f59e0b",
+          borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+        }}>
+          <span style={{ fontSize: 22 }}>📁</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#d97706", marginBottom: 2 }}>
+              ZIP 다운로드를 하려면 원본 파일을 다시 선택해주세요
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
+              새로고침 후에는 브라우저 보안 정책으로 파일을 다시 불러와야 합니다.
+              이전과 같은 사진 파일들을 선택해 주세요.
+            </div>
+          </div>
+          <button
+            onClick={handleReattachClick}
+            style={{
+              padding: "9px 20px", borderRadius: 9, border: "none", cursor: "pointer",
+              background: "#f59e0b", color: "#fff",
+              fontWeight: 700, fontSize: 13, whiteSpace: "nowrap",
+            }}
+          >
+            📂 파일 다시 선택
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleReattachChange}
+          />
+        </div>
+      )}
 
       {/* Main content */}
       <div style={{ padding: "24px" }}>
@@ -557,6 +628,61 @@ export default function Gallery() {
         >✨</button>
       )}
 
+      {/* ── 재추출 로딩 오버레이 ── */}
+      {reextracting && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 3000,
+          background: "rgba(10,10,18,0.82)",
+          backdropFilter: "blur(6px)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 24,
+        }}>
+          <div style={{ position: "relative", width: 72, height: 72 }}>
+            <div style={{
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: "4px solid rgba(108,99,255,0.2)",
+            }} />
+            <div style={{
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: "4px solid transparent",
+              borderTopColor: "var(--accent)",
+              animation: "spinReextract 0.9s linear infinite",
+            }} />
+            <div style={{
+              position: "absolute", inset: 10, borderRadius: "50%",
+              border: "3px solid transparent",
+              borderTopColor: "var(--accent2)",
+              animation: "spinReextract 1.4s linear infinite reverse",
+            }} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
+              AI가 다시 고르는 중...
+            </div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)" }}>
+              가중치·필터 조건으로 사진을 재선별하고 있어요
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 재추출 완료 토스트 ── */}
+      {reextractDoneCount !== null && (
+        <div style={{
+          position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
+          zIndex: 3000,
+          background: "rgba(34,197,94,0.95)",
+          color: "#fff", borderRadius: 12,
+          padding: "12px 28px",
+          fontSize: 15, fontWeight: 700,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.4)",
+          animation: "toastIn 0.3s ease",
+          whiteSpace: "nowrap",
+        }}>
+          ✓ {reextractDoneCount}장 재선별 완료!
+        </div>
+      )}
+
       {/* Context menu */}
       {ctxMenu && ctxPhoto && (
         <div ref={ctxRef} style={{
@@ -595,6 +721,14 @@ export default function Gallery() {
         @keyframes slideInBanner {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spinReextract {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
     </div>

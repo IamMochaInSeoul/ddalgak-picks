@@ -94,7 +94,7 @@ export interface GroupScoreEntry {
 }
 
 export interface AppState {
-  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery";
+  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album";
   photoType: PhotoType | null;
   photos: Map<string, PhotoEntry>;
   groups: PhotoGroup[];
@@ -116,4 +116,7 @@ export interface AppState {
   preferenceWeights: AnalysisWeights | null;  // 피드백 반영 후 조정된 가중치
   preferenceSelected: Set<string> | null;     // 취향 기반 재추출 결과 photoId 집합
   bannerDismissed: boolean;               // 플로팅 배너 닫기 여부
+
+  // 세션 지속성
+  filesDetached: boolean;                 // 새로고침 후 File 객체가 없는 상태
 }
