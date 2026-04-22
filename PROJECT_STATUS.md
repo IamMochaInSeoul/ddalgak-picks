@@ -1,365 +1,329 @@
-# 딸깍픽스 (ddalgak-picks) — 현황 문서
+# 딸깍픽스 (ddalgak-picks) — PROJECT STATUS
 
-> AI 사진 셀렉터 | Vite + React 18 + TypeScript | Vercel SPA  
-> 배포 URL: https://ddalgak-picks.vercel.app  
-> 문서 기준일: 2026-04-22
-
----
-
-## 1. 제품 개요
-
-수백~수천 장의 사진 중 원하는 N장을 AI가 자동 선별해주는 도구.  
-현재: 브라우저 기반. 계획: 데스크탑 앱 전환으로 정확도·속도·수익화 달성.
-
-### 핵심 가치 제안
-"사진 고르는 데 쓰는 2~3시간을 5분으로 줄여준다."
+> **마지막 업데이트:** 2026-04-23
+> **현재 버전:** v0.1.4 (GitHub 커밋 완료 — Vercel 자동 배포 미트리거 상태)
+> **배포 URL:** https://ddalgak-picks.vercel.app
+> **GitHub:** https://github.com/IamMochaInSeoul/ddalgak-picks (main 브랜치)
 
 ---
 
-## 2. 경쟁 분석 및 시장 포지셔닝
+## 프로젝트 개요
 
-### 기존 경쟁 도구
-
-| 도구 | 타겟 | 가격 | 한계 |
-|------|------|------|------|
-| Narrative Select | 전문 사진작가 | $9/월 | 사진작가 전용 워크플로 (Lightroom 중심) |
-| AfterShoot | 전문 사진작가 | $10/월 | 웨딩·스튜디오 업체용, 일반 소비자 불편 |
-| Imagen AI | 전문 사진작가 | $0.10/장 | 비쌈, 일반인 사용 어려움 |
-| Lightroom AI | 사진작가 | 구독 포함 | Adobe 생태계에 종속 |
-| Google Photos | 일반 소비자 | 무료 | 셀렉 기능 없음, 저장 목적 |
-
-### 딸깍픽스의 포지션
-**"전문가 도구가 아닌, 일반 소비자를 위한 첫 번째 AI 사진 셀렉터"**
-
-- 스튜디오 사진 받은 가족 → 셀렉 의뢰 전에 먼저 추려야 함
-- 해외여행 다녀온 사람 → 2,000장 중 SNS용 50장 추리고 싶음
-- 반려동물 보호자 → 귀여운 순간 300장에서 최고 20장 뽑고 싶음
-- 이 모든 사람들이 사진 선별에 시간을 쓰고 있지만, 그들을 위한 도구가 없음
+- **무엇:** 수백~수천 장 사진 중 원하는 만큼 AI가 골라주는 웹앱
+- **누가:** 비개발자 Minhyup (민현). 아이디어만 제공, 모든 기획·설계·개발·QA·배포는 Claude가 담당
+- **스택:** Vite 5 + React 18 + TypeScript + Zustand 5 + MediaPipe tasks-vision@0.10.34 + JSZip + Vercel 정적 배포
 
 ---
 
-## 3. 브라우저의 근본 한계 — 유료 서비스로 가려면 넘어야 할 벽
+## 제품 전략 — 기능 기획 v1 (2026-04-23 확정)
 
-현재 브라우저 기반 구조는 **무료 데모**에는 적합하지만, 돈을 받기엔 치명적 한계가 있다.
+> **이 섹션은 모든 기능 결정의 상위 기준이다. 후속 세션의 Claude는 기능 변경·추가 시 이 섹션과 충돌하는지 먼저 확인할 것.**
 
-| 한계 | 현재 상황 | 유료 서비스가 되려면 |
-|------|----------|-------------------|
-| **속도** | 300장 분석에 5~10분 | 30초~1분 이내 |
-| **정확도** | MediaPipe 브라우저 모델 (제한적) | 서버급 모델 (InsightFace, CLIP 등) |
-| **반려동물** | 눈 감음 감지 부정확 | 전용 동물 모델 필요 |
-| **풍경/여행** | 아예 미지원 | 노출·구도·색감 분석 필요 |
-| **백그라운드** | 탭 전환 시 속도 급감 | 백그라운드 처리 지원 |
-| **파일 접근** | 업로드 필요 (드래그앤드롭) | 폴더 직접 접근 (수천 장도 즉시) |
-| **세션 유지** | 새로고침 시 모두 소실 | 작업 저장·이어서 계속 |
-| **내보내기** | ZIP 다운로드만 | Google Drive·iCloud·Lightroom 연동 |
+### 핵심 문제 (JTBD)
 
----
+> "스튜디오가 준 폴더 구조(만삭/베이비본/100일/돌) 그대로, 각 폴더에서 베스트 N장씩 셀렉해서, **똑같은 폴더 구조로** ZIP 돌려보내기 — 3시간 작업을 10분으로."
 
-## 4. 아키텍처 전략 결정
+핵심 타겟: **스튜디오에서 원본 앨범을 받아 셀렉 후 다시 스튜디오에 보내야 하는 신혼부부·육아맘·반려동물 부모.** 보조 타겟: 여행·일상 사진 중 S급만 추리고 싶은 일반 유저.
 
-### 옵션 비교
+### 3가지 Flow 구조
 
-| 방식 | 속도 | 정확도 | 설치 | 수익화 | 권장 |
-|------|------|--------|------|--------|------|
-| 현재 (브라우저 SPA) | 🔴 느림 | 🟡 보통 | 불필요 | 어려움 | 무료 데모 |
-| 클라우드 서버 처리 | ✅ 빠름 | ✅ 높음 | 불필요 | 가능 | 서버 비용 큼 |
-| **데스크탑 앱 (Tauri)** | ✅ 빠름 | ✅ 높음 | 필요 | ✅ 최적 | **메인 제품** |
-| 모바일 앱 (네이티브) | 🟡 보통 | 🟡 보통 | 필요 | 가능 | Phase 3 이후 |
-| PWA (브라우저+확장) | 🟡 보통 | 🟡 보통 | 불필요 | 어려움 | 보조 수단 |
+| Flow | 시나리오 | 입력 | 출력 |
+|---|---|---|---|
+| **A** | 단일 묶음 베스트 셀렉 | 사진 덩어리 (폴더 구조 무의미) | 베스트 N장 ZIP |
+| **B** ★ | 폴더 병렬 셀렉 (메인 Use Case) | 폴더 여러 개 (만삭/베이비본/100일/돌) | 입력 구조 그대로 ZIP |
+| **C** | 앨범 템플릿 배치 | 촬영 세션 폴더 + 템플릿(액자/앨범 슬롯) | 슬롯별 배치된 ZIP |
 
-### 결정: **Tauri 데스크탑 앱 + 현재 웹은 무료 체험 유지**
+랜딩은 이 3Flow를 카드로 명시하여 사용자가 자기 상황을 주카드 선택.
 
-**Tauri를 선택하는 이유:**
-- 현재 React 프론트엔드 90% 재사용 가능 (재개발 비용 최소화)
-- 로컬 처리 = 개인정보 보호 + 서버 비용 없음 = 지속 가능한 수익
-- Python 백엔드 내장 가능 → InsightFace·DeepFace·YOLO 등 강력한 모델 사용
-- GPU 직접 접근 → 300장 분석 30초 이내 목표
-- 파일 시스템 직접 접근 → 폴더 통째로 읽기, 결과를 원본 폴더에 저장
-- macOS/Windows/Linux 동시 지원
-- 일회성 구매 모델에 적합 (앱 다운로드 → 라이센스 활성화)
+### 핵심 차별점 5가지
 
-**현재 웹 버전의 역할:**
-- 무료 체험 티어 (100장 제한)
-- 데스크탑 앱 구매 전 기능 미리 보기
-- 마케팅·SEO 채널
+1. **폴더 구조 유지 셀렉 (Flow B)** — 경쟁사가 못하는 본질적 차별점
+2. **이벤트 자동 태깅** — 폴더명·EXIF에서 만삭/베이비본/100일/돌 등 자동 분류
+3. **중복 제거 — 과거 셀렉 기억하는 AI** — pHash 지문 이력 기반, 성장앨범에서 이미 쓴 컷 자동 제외. Phase 0 필수 기능.
+4. **AI 보정 샘플 → 전체** — Try Before Buy, Before/After 슬라이더. Phase 1.
+5. **100% 로컬 셀렉 + 선택적 서버 보정** — 사진 원본은 기본 브라우저에서만, 보정만 명시 동의 후 서버
 
----
+### UX 원칙 (토스식 6원칙)
 
-## 5. 수익화 모델
+1. **한 화면 한 결정** — 기본 CTA 하나, 보조 행동은 숨김
+2. **숫자는 먼저 공개** — 예상 시간·감지 장수를 분석 시작 전 노출
+3. **다음 액션은 시스템이 추천** — 갤러리 진입 즉시 베스트가 기본 선택된 상태
+4. **결제는 2초** — (Phase 2 적용 시) 카카오페이 원탭 기본
+5. **로딩은 스토리텔링** — "눈 감은 컷 17장 제외, 흔들림 8장 제외, 베스트 10장 선정"
+6. **무료 재시도·수정 무제한** — 실수해도 되돌릴 수 있음
 
-### 티어 구조
+### Flow별 상세 스펙
 
-**Free (현재 웹)**
-- 최대 100장/세션
-- 인물 모드만
-- 재추출 1회
-- ZIP 다운로드
+#### Flow A · 단일 묶음 베스트
 
-**Pro — ₩29,000 일회성 구매 (데스크탑 앱)**
-- 장수 제한 없음
-- 전체 모드 (인물/반려동물/여행·일상/혼합)
-- 재추출 무제한
-- 취향 학습 (피드백 기반 재추출)
-- 폴더 직접 접근
-- Google Drive·iCloud 내보내기
-- 세션 저장·이어서 계속
-- 분석 속도 10× (GPU 직접 활용)
+- **입력:** 이미지 파일 N장, 피사체 자동/수동(인물·반려동물·자동), 목표 장수
+- **처리:** 썸네일 400px → pHash → 연사 그룹핑(Hamming≤10) → 씬 클러스터링(Hamming≤22) → 피사체 감지 → bbox Laplacian 선명도 → 채점·감점 → 씬 비례 할당 + maxPerGroup 그리디 선별
+- **출력:** 갤러리 3탭(선택·제외·전체) → ZIP 다운로드
+- **UX:** 단일 드롭존 → 자동 분석 → 로딩 스토리텔링 → 갤러리 진입 시 단일 CTA "이대로 받기"
 
-**Studio — ₩9,900/월 (Pro 기능 + 전문가 기능)**
-- 배치 처리 (폴더 여러 개 동시)
-- Lightroom XMP 별점 내보내기
-- 내 취향 프로필 영구 저장 및 다음 세션에 자동 적용
-- 스튜디오 의뢰인별 프로젝트 관리
+#### Flow B · 폴더 병렬 셀렉 ★ (신규 구현 필요)
 
-### 가격 근거
-- ₩29,000 (약 $22): 사진 정리 외주 맡기는 비용의 1/10~1/20 수준
-- 스튜디오 촬영 1회 후 셀렉에 쓰는 시간이 평균 2~3시간이라면, 시간당 가치로 충분히 정당화
-- 월정액보다 일회성 구매가 일반 소비자 심리에 적합 (부담 없음)
+- **입력:** 폴더 여러 개 (`만삭/`, `베이비본/`, `100일/`, `돌/` 등)
+- **처리:** 폴더별 독립 분석 (이벤트 태그 추정 → 피사체 자동 감지 → Flow A 동일 파이프라인)
+- **출력:** 폴더 탭 UI `[만삭 12/15] [베이비본 18/20] ...`, 각 탭 안 갤러리, ZIP 내부 구조 = 입력 폴더 구조, 파일명 원본 유지
+- **목표 장수 UX:** AI 자동 추천이 기본. "직접 입력할게요" 누르면 전체 폴더 일괄 입력 UI `[만삭:15][베이비본:20][100일:30][돌:40]`
 
----
+#### Flow C · 앨범 템플릿 배치 (기존 AlbumContainer 유지 + 폴백 추가)
 
-## 6. 데스크탑 앱 기술 스택 (Tauri v2)
+- **입력:** 템플릿 폴더(빈 액자/앨범 슬롯 구조) + 촬영 세션 폴더들
+- **처리:** `parseTemplate()` 슬롯 배열 생성 → 세션 분석 → `autoAssign()` 슬롯 배치
+- **출력:** 슬롯 편집 UI → 템플릿 폴더 구조 그대로 ZIP
+- **개선:** 템플릿 파싱 실패 시 자동으로 Flow B로 폴백 ("템플릿을 못 읽었어요. 폴더 구조 그대로 셀렉만 도와드릴게요.")
 
-```
-┌─────────────────────────────────────────┐
-│          프론트엔드 (React)               │
-│   현재 코드 90% 재사용 + UI 개선         │
-├─────────────────────────────────────────┤
-│          Tauri 브리지 (Rust)             │
-│   파일 시스템, 시스템 트레이, 업데이트    │
-├─────────────────────────────────────────┤
-│       Python 사이드카 프로세스            │
-│   InsightFace / DeepFace (얼굴 감지)     │
-│   YOLO v8 (동물 감지)                   │
-│   CLIP (풍경/구도 품질 평가)             │
-│   ONNX Runtime (GPU 가속)               │
-└─────────────────────────────────────────┘
+### 공통 엔진 기능
+
+- **AI 셀렉:** 인물 가중치 eyeOpen(35%)/sharpness(30%)/expression(20%)/facing(15%), 반려동물 sharpness(55%)/position(30%)/eyeEstimate(15%)
+- **취향 학습:** 20장 스와이프 피드백 → 가중치 조정 → 즉시 재선별. Phase 1에 이벤트 태그별 영속화.
+- **중복 제거(Phase 0):** `PastSelection` 구조로 pHash 지문 + 파일명만 IndexedDB 저장. 새 업로드 시 Hamming ≤ 8 대조 → "🔁 이전 세션에 사용됨" 뱃지 + 기본 제외. 계정 도입 대비 구조 호환 설계.
+- **AI 보정(Phase 1):** Replicate API + CodeFormer + GFPGAN. 프리셋 3종(자연스럽게·스튜디오급·프로페셔널). 샘플 1장 10분 만료, 전체는 비동기 Queue + 완료 알림. 명시 동의 후 업로드, 24시간 내 서버 파기.
+- **워터마크·저장 방지(Phase 1):** 프리뷰는 canvas 렌더 + 대각선 4방향 워터마크, 우클릭·드래그 차단. 결제(혹은 최종 ZIP) 후에만 원본 해상도 워터마크 없음.
+- **세션 지속성(기구현):** IndexedDB 자동저장 3초 디바운스, 24h TTL, 재방문 복구 배너.
+
+### 데이터 구조 — 추가될 타입
+
+```ts
+type EventTag =
+  | "maternity" | "newborn" | "50days" | "100days"
+  | "first_birthday" | "wedding" | "family"
+  | "pet_profile" | "travel" | "other";
+
+interface FolderSession {
+  id: string;
+  folderName: string;
+  eventTag: EventTag | null;
+  photoType: PhotoType;
+  targetCount: number;        // AI 추천 or 사용자 입력
+  photos: PhotoEntry[];
+  selectedIds: Set<string>;
+  groups: PhotoGroup[];
+}
+
+interface PastSelection {
+  sessionId: string;
+  eventTag: EventTag | null;
+  selectedAt: number;
+  fingerprints: {
+    hash: string;             // BigInt 직렬화
+    originalFileName: string;
+  }[];
+}
+
+// AppState에 추가
+interface AppState {
+  // ... 기존
+  flow: "A" | "B" | "C" | null;
+  folderSessions: FolderSession[];
+  pastSelections: PastSelection[];
+}
 ```
 
-**프론트엔드 → Tauri 브리지 → Python 파이프라인**  
-결과는 기존 React 갤러리에서 그대로 표시.
-
-### 핵심 개선 포인트
-
-**얼굴 감지**: MediaPipe(브라우저) → InsightFace  
-- 감지 정확도: 90% → 99%+
-- 측면 얼굴, 아이, 안경, 마스크 모두 강건
-- 감정 인식 (진짜 웃음 vs 어색한 웃음) 가능
-
-**반려동물**: BlazeFace 밝기 추정 → YOLO v8 + 동물 landmark  
-- 실제 눈 열림/닫힘 감지
-- 귀 위치, 혀, 집중도 지표
-
-**여행/풍경**: 미지원 → CLIP 기반 품질 평가  
-- "좋은 사진"의 의미론적 이해
-- 노출·색감·구도 자동 평가
-- "에펠탑이 잘 나온 사진" 같은 주제 인식 가능
-
-**속도**: 300장 기준  
-- 현재 브라우저: 5~10분  
-- 데스크탑 GPU: 20~30초 목표
-
 ---
 
-## 7. 모바일 전략 (Phase 3 이후)
+## 기술 제약 (매 세션 반드시 숙지)
 
-스마트폰에서 직접 카메라 롤에 접근하는 것이 핵심 UX.
-
-**접근법: Capacitor 기반 하이브리드 앱**  
-- 현재 React 코드 재사용
-- iOS Photos API / Android MediaStore 접근
-- 온디바이스 ML (Core ML / TFLite) — 서버 불필요
-- App Store / Play Store 배포
-
-**모바일의 핵심 차별점:**
-- 여행 중 당일 사진 즉시 정리 ("오늘 찍은 300장 지금 바로 추려줘")
-- 반려동물 일상 사진 자동 정리
-- 카메라 앱 연동 (촬영 직후 자동 분석)
-
-**한계:**
-- 온디바이스 모델은 데스크탑보다 정확도 낮음
-- 배터리 소모 이슈 (대용량 처리 시)
-- App Store 심사 기간·정책 리스크
-
----
-
-## 8. 사진 유형별 현재 지원 및 목표
-
-| 모드 | 현재 (웹) | 데스크탑 목표 | 모바일 목표 |
-|------|----------|-------------|------------|
-| 인물 (스튜디오·가족) | ✅ 안정 | ✅✅ 정확도 대폭 향상 | ✅ 지원 |
-| 반려동물 | ⚠️ 부정확 | ✅ YOLO 기반 정확 감지 | ✅ 지원 |
-| 여행·풍경·일상 | ❌ 미지원 | ✅ CLIP 기반 신규 | ✅ 지원 |
-| 혼합 (자동 감지) | ⚠️ 부분 | ✅ 완전 자동 분기 | ✅ 지원 |
-
----
-
-## 9. 현재 웹 버전 — 즉시 수정 필요 항목
-
-데스크탑 전환 전, 현재 웹에서 개선해 무료 체험 품질을 높일 것들:
-
-| 항목 | 우선순위 | 내용 |
-|------|--------|------|
-| ~~신뢰도 레이블 변경~~ | ✅ 완료 (2026-04-22) | "낮음" → "유사 컷 다수" / "높음" → "확실한 최선" |
-| ~~반려동물 가중치 조정~~ | ✅ 완료 (2026-04-22) | eyeEstimate 35%→15%, sharpness 45%→55%, position 20%→30% |
-| ~~랜딩 문구 개선~~ | ✅ 완료 (2026-04-22) | "스튜디오" 한정 표현 → 여행·반려동물 포함으로 확장 |
-| 신뢰도 툴팁 추가 | 🟡 단기 | 모달에서 "유사 컷 다수"의 의미 설명 |
-| 무료 체험 장수 제한 | 🟡 단기 | 100장 초과 시 "데스크탑 앱에서 무제한" 안내 |
-| 랜딩 페이지 리디자인 | 🟡 단기 | 데스크탑 앱 대기 등록 CTA 추가 |
-
----
-
-## 10. 개발 로드맵
-
-### Phase 1 — 현재 웹 품질 개선 (1~2주)
-- [x] 신뢰도 레이블 변경 (2026-04-22)
-- [x] 반려동물 가중치 재조정 (2026-04-22)
-- [x] 랜딩 문구 개선 — 스튜디오 → 여행/반려동물 포함 (2026-04-22)
-- [ ] 신뢰도 툴팁 추가 (모달에서 "유사 컷 다수" 의미 안내)
-- [ ] 100장 초과 시 데스크탑 앱 안내 배너
-
-### Phase 2 — Tauri 데스크탑 앱 기반 구축 (4~6주)
-- [ ] Tauri v2 프로젝트 초기화
-- [ ] React 프론트엔드 마이그레이션
-- [ ] Python 사이드카 (InsightFace 얼굴 감지)
-- [ ] 파일 시스템 폴더 직접 접근
-- [ ] macOS 빌드 + 코드사이닝
-- [ ] 라이센스 활성화 시스템 (Stripe → 라이센스 키)
-
-### Phase 3 — 데스크탑 앱 기능 완성 (4~6주)
-- [ ] YOLO 반려동물 감지 통합
-- [ ] CLIP 여행·풍경 모드
-- [ ] 세션 저장·불러오기
-- [ ] Google Drive / iCloud 내보내기
-- [ ] Windows 빌드 추가
-- [ ] 자동 업데이트
-
-### Phase 4 — Studio 티어 (2~3주)
-- [ ] Lightroom XMP 내보내기
-- [ ] 배치 처리
-- [ ] 취향 프로필 영구 저장
-- [ ] 월 구독 결제 (Stripe)
-
-### Phase 5 — 모바일 (별도 검토)
-- [ ] Capacitor 기반 iOS 앱
-- [ ] 카메라 롤 접근
-- [ ] App Store 출시
-
----
-
-## 11. 현재 구현된 기능 (웹 버전 기준)
-
-### 업로드 & 설정
-- 드래그앤드롭 / 파일 선택 (JPEG, PNG, HEIC, HEIF, WebP, AVIF, TIFF)
-- 목표 장수 설정 (기본 30장)
-- 유사 사진 최대 허용 수 (maxPerGroup): 1/2/3/5/무제한
-
-### AI 분석 파이프라인
+### Zustand 규칙
 ```
-pHash 그룹핑 → 썸네일 생성 → MediaPipe 모델 로드
-→ 사진별 얼굴/동물 감지 + 채점
-→ 씬 클러스터링 → 씬별 비례 선별
+❌ useStore((s) => ({ a: s.a, b: s.b }))  → React Error #185 무한루프!
+✅ const a = useStore((s) => s.a)          → 개별 셀렉터만 사용
 ```
 
-### 인물 채점 (현재)
-| 항목 | 가중치 | 방법 |
-|------|--------|------|
-| 눈 뜸 | 35% | MediaPipe blendshapes eyeBlink |
-| 선명도 | 30% | 얼굴 bbox 영역 Laplacian |
-| 표정 | 20% | mouthSmile blendshapes |
-| 정면도 | 15% | nose-eye midpoint yaw/pitch |
+### 빌드·배포 제약
+- **FUSE 파일시스템:** 프로젝트 폴더 내 `rm -rf dist/` 불가, /tmp 도 기존 빌드 폴더 삭제 불가
+- **빌드 명령:** `npx vite build --outDir /tmp/ddalgak-buildN --emptyOutDir` (N을 매번 증가시킴)
+- **dist 업데이트:** 새 JS를 `dist/assets/`에 복사 후 `dist/index.html`의 src 속성 수정
+- **배포:** 사용자가 터미널에서 `git commit && git push` → Vercel 자동 배포
+- **git index.lock:** FUSE로 삭제 불가 → 막힐 때 사용자 터미널에서 `rm -f .git/index.lock`
+- **FUSE 파일 변경 감지:** git이 Claude 수정 파일을 diff로 못 잡을 수 있음 → `git show HEAD:파일` 으로 커밋된 내용 확인 필수
 
-### 반려동물 채점 (현재, 개선 필요)
-| 항목 | 가중치 | 방법 |
-|------|--------|------|
-| 선명도 | 45% | bbox Laplacian |
-| 눈 추정 | 35% | 눈 영역 밝기+선명도 (부정확) |
-| 중심성 | 20% | bbox 중심 vs 이미지 중심 |
+### Vercel 배포 이슈 (중요)
+- Vercel GitHub 자동 트리거가 간헐적으로 멈춤 → `npx vercel --prod` 로 수동 배포 필요
+- 명령: `cd ~/Desktop/"vibe coding"/ddalgak-picks && npx vercel --prod`
+- 첫 실행 시 브라우저 로그인 필요 (jungmoca90@gmail.com 구글 계정)
+- projectId: `prj_5Z0q2wFkjWQgNnoHzwH9r3bdP1Gd`
+- teamId / orgId: `team_QCXZxUDktkf2o1BPLrh0lVk7`
+- GitHub 계정: IamMochaInSeoul
 
-### 씬 다양성 선별
-- pHash Hamming ≤ 10: 연사 그룹핑
-- pHash Hamming ≤ 22: 씬 클러스터링
-- 씬별 사진 수 비례로 목표 할당 → greedy 선별
+---
 
-### 갤러리 기능
-- 탭: 선택된 사진 / 제외된 사진(감점 사유별 버킷) / 전체(연사 그룹별)
-- 클릭: 원본 해상도 모달, 줌 1~500%, 드래그 패닝
-- 우클릭: 선택 포함/제외 컨텍스트 메뉴
-- 재분석: 가중치·필터·maxPerGroup 조정, 최대 5회
+## 구현 완료 기능 (v0.1.4 기준)
 
-### 취향 기반 재추출
-- 플로팅 배너 (5초 후 등장) → 카드 스와이프 피드백 (20장 이상)
-- 방향 벡터 가중치 조정 → 즉시 재선별 (AI 재실행 없음)
-- AI 기본 vs 내 취향 탭 비교
+### 랜딩 페이지 (Phase 0에서 3카드로 재설계 예정)
+- 현재 버튼 2종: "사진만 셀렉하기" / "스튜디오 앨범용"
+- **Phase 0 목표:** Flow A/B/C 3카드 명시 랜딩
+
+### Flow A 엔진 (단일 묶음 베스트 — 거의 완성)
+- 인물 / 반려동물 / 혼합 3가지 모드
+- 2단계 pHash 그룹핑: 연사(Hamming≤10) + 씬(Hamming≤22)
+- 씬별 비례 선별 (다양성 자동 보장)
+- 얼굴 감지 5단계 파이프라인 (FaceLandmarker×4 + BlazeFace)
+- 얼굴 bbox 영역만 선명도 측정 (보케 오판 방지)
+- 인물 가중치: eyeOpen(35%) / sharpness(30%) / expression(20%) / facing(15%)
+- 반려동물 가중치: sharpness(55%) / position(30%) / eyeEstimate(15%)
+- maxPerGroup 설정 (1/2/3/5/무제한)
+- 필터: 눈감음 제외 / 흔들림 제외 / 정면만 / 낮은신뢰도 제외
+- 갤러리 3탭 (선택됨 / 제외됨 / 전체), 제외됨 감점 사유별 버킷
+- 재추출 최대 5회, 더블클릭 상세 모달(줌 1~500% + 드래그 패닝), 우클릭 컨텍스트 메뉴
+- 신뢰도 레이블: HIGH→확실한 최선 / LOW→유사 컷 다수
+- 취향 재추출: 플로팅 배너 → 20장 카드 스와이프 피드백 → 가중치 조정 → 즉시 재선별, AI 기본 vs 내 취향 탭 비교
+
+### 업로드 화면 (v0.1.4 개선)
+- 폴더 드래그앤드롭: FileSystemEntry API로 재귀 읽기
+- "🖼 사진 파일 선택" + "📁 폴더째 선택" 버튼 2종
+- 폴더 읽는 동안 로딩 상태 표시
+- 선택 초기화 버튼
+
+### 세션 지속성 (v0.1.2)
+- beforeunload 경고 (분석 중·갤러리)
+- IndexedDB 자동저장 3초 디바운스 (24h TTL)
+- 재방문 복구 배너
+- ZIP용 파일 재첨부 배너 (파일명 매칭)
+
+### Flow C 엔진 (앨범 템플릿 배치 — v0.1.3 기구현)
+- 스튜디오 템플릿 폴더 파싱 (액자 capacity=1 / 앨범 스프레드 capacity=3 / 일반 capacity=2 자동 감지)
+- 템플릿 업로드 피드백: 파싱 스피너 → 초록 성공카드 / 빨간 실패카드
+- 다중폴더 드래그앤드롭 (v0.1.4: 파일 직접 드롭 fallback 추가)
+- Google Drive 연동: GIS OAuth + Google Picker + Drive API 다운로드
+  - 환경변수 미설정 시 Cloud Console 설정 가이드 모달 표시
+  - 필요 env: `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`
+- 세션 순서 조정 + AI 자동 배치(`autoAssign`: 액자부터 전체 선명도, 나머지 세션 비례) + 수동 배치
+- ZIP 다운로드 (템플릿 폴더 구조 그대로)
 
 ### 기타
 - ZIP 다운로드 / 파일명 복사
-- 한국어/영어 전환
-- 분석 중 백그라운드 경고
+- 한국어/영어 전환 (i18n)
 
 ---
 
-## 12. 알려진 문제점
+## 로드맵 — Phase별
 
-| 문제 | 심각도 | 개선 방향 |
-|------|--------|----------|
-| "신뢰도 낮음" 레이블 오해 | 🟡 중간 | "유사 컷 다수"로 변경 (Phase 1) |
-| 반려동물 눈 감음 부정확 | 🟡 중간 | 가중치 조정 단기, YOLO 중기 |
-| 여행·풍경 미지원 | 🔴 높음 | 데스크탑 앱에서 CLIP 적용 |
-| 백그라운드 처리 불가 | 🟡 중간 | 데스크탑 앱에서 해결 |
-| 세션 비영속 | 🔴 높음 | 데스크탑 앱에서 해결 |
-| 속도 (5~10분) | 🔴 높음 | 데스크탑 GPU 처리로 30초 목표 |
+### Phase 0 — 제품 정체성 완성 (3~4주)
+
+> **목표:** "이 제품은 폴더 구조를 지켜주고, 과거를 기억하는 셀렉터다"를 사용자가 첫 방문에서 인지.
+
+1. **랜딩 3카드 리디자인** — Flow A/B/C 명시 + 각 카드 "이런 분에게" 카피
+2. **Flow B 신규 구현** — `FolderSessionContainer.tsx` (폴더 탭 래퍼 + 각 탭 Gallery 임베드)
+3. **Flow C 폴백** — 템플릿 파싱 실패 시 자동으로 Flow B로 전환
+4. **이벤트 태깅 사전** — `eventTagger.ts` (한국어 폴더명 매칭 + EXIF 촬영일)
+5. **분석 로딩 스토리텔링** — "눈 감은 컷 N장 제외..." 실수치 단계별 노출
+6. **갤러리 진입 단일 CTA** — 보조 행동은 아이콘 1열로 축소
+7. **중복 제거 (IndexedDB 로컬)** — `dedupe.ts` + `pastSelectionStore.ts`
+   - pHash 지문 + 파일명만 저장, 사진 원본은 안 보냄
+   - Hamming ≤ 8 매칭 시 "🔁 이전 세션에 사용됨" 뱃지 + 기본 제외
+   - 계정 도입 대비 데이터 구조 호환 설계
+
+### Phase 1 — 프리미엄 업셀 + 재방문 엔진 (4~6주)
+
+> **목표:** 셀렉+보정 풀 스택 제공 + 재방문 시 가치 증가 체감.
+
+8. **취향 학습 영속화** — 이벤트 태그별 가중치 세트 IndexedDB 저장
+9. **워터마크 프리뷰 + 저장 방지** — canvas 렌더 + 대각선 4방향 워터마크, 우클릭·드래그 차단
+10. **ZIP UX 개선** — 진척률 + 완료 토스트 + 재다운로드 버튼
+11. **AI 보정 (샘플 + 전체)**
+    - Replicate API + CodeFormer + GFPGAN
+    - 샘플 1장: 명시 동의 → Before/After 슬라이더 → 10분 만료
+    - 전체: 비동기 Queue → 완료 시 알림 → 워터마크 없는 보정 ZIP
+    - 프리셋 3종: 자연스럽게 / 스튜디오급 / 프로페셔널
+
+### Phase 2 — 비즈니스 레이어 (나중, 이번 기획 범위 밖)
+
+- 계정 시스템 (소셜 로그인 + UUID 어뷰징 방지)
+- 서버 지문 동기화 (중복 제거 기기 간 이전)
+- 결제 (토스페이먼츠 — 카카오페이·네이버페이·카드)
+- 알림톡 CRM (라이프사이클 할인 재방문 루프)
+- 광고 슬롯 (네이티브, Flow A·무료 유저 대상)
+- 가격 체계 확정
 
 ---
 
-## 13. 파일 구조 (현재 웹 버전)
+## 주요 파일 구조
 
 ```
 src/
 ├── components/
-│   ├── AppShell.tsx       화면 라우터
-│   ├── Landing.tsx        랜딩
-│   ├── TypeSelect.tsx     사진 유형 선택
-│   ├── Upload.tsx         업로드 + 설정
-│   ├── Analysis.tsx       분석 진행
-│   ├── Gallery.tsx        갤러리 메인
-│   ├── PhotoCard.tsx      썸네일 카드
-│   ├── PhotoModal.tsx     상세 모달 (원본 해상도, 줌)
-│   ├── FeedbackMode.tsx   취향 피드백 수집
-│   ├── LangToggle.tsx     언어 전환
+│   ├── AppShell.tsx         ← beforeunload + 세션 자동저장 + 복구 배너
+│   ├── Landing.tsx          ← Phase 0에서 3카드로 재작성 예정
+│   ├── TypeSelect.tsx       ← Flow A 피사체 선택
+│   ├── Upload.tsx           ← 파일/폴더 업로드 + maxPerGroup (v0.1.4)
+│   ├── Analysis.tsx         ← Phase 0에서 스토리텔링 로딩 강화
+│   ├── Gallery.tsx          ← Flow A 메인 (가장 큰 파일, 복잡)
+│   ├── FeedbackMode.tsx     ← 카드 스와이프 취향 피드백
+│   ├── PhotoCard.tsx
+│   ├── PhotoModal.tsx       ← 줌·패닝 모달
+│   ├── AlbumContainer.tsx   ← Flow C 전체 (파싱 + 배치 + ZIP)
+│   ├── LangToggle.tsx
 │   └── ErrorBoundary.tsx
+│   ── (Phase 0 신규)
+│   ├── FolderSessionContainer.tsx   ← Flow B 메인 (신규)
+│   └── FolderTabBar.tsx             ← 폴더 탭 UI (신규)
 ├── lib/
-│   ├── types.ts           타입 + 기본값
-│   ├── store.ts           Zustand 전역 상태
-│   ├── analyzer.ts        분석 파이프라인
-│   ├── scorer.ts          채점 + 씬 다양성 선별
-│   ├── phash.ts           pHash + 클러스터링
-│   ├── laplacian.ts       선명도 측정
-│   ├── feedbackLearning.ts 취향 재추출
-│   └── i18n.ts            번역
-└── main.tsx
+│   ├── types.ts             ← 전체 타입 + AppState (flow/folderSessions/pastSelections 추가 예정)
+│   ├── albumTypes.ts        ← Flow C 전용 타입 + FolderSession/PastSelection 추가 예정
+│   ├── store.ts             ← Zustand
+│   ├── analyzer.ts          ← 분석 파이프라인 진입점 (Flow B에서 폴더별 호출)
+│   ├── scorer.ts            ← 채점 + 씬 다양성 선별 (공통)
+│   ├── phash.ts             ← pHash + Hamming + 씬 클러스터링 (공통, 중복제거도)
+│   ├── laplacian.ts         ← Laplacian variance
+│   ├── feedbackLearning.ts  ← 취향 재추출 알고리즘
+│   ├── sessionPersist.ts    ← IndexedDB 세션 저장/복구
+│   ├── i18n.ts
+│   ── (Phase 0 신규)
+│   ├── eventTagger.ts               ← 폴더명·EXIF → EventTag 추정 (신규)
+│   ├── dedupe.ts                    ← 과거 지문 대조 (신규)
+│   └── pastSelectionStore.ts        ← IndexedDB 지문 저장소 (신규)
+├── messages/
+│   ├── ko.json
+│   └── en.json
+dist/
+├── index.html               ← 현재 참조: index-BvGccAyR.js
+└── assets/
+    ├── index-BvGccAyR.js    ← v0.1.4 빌드 (최신, GitHub 커밋 완료)
+    ├── index-BPphCvQy.js    ← v0.1.3 빌드
+    ├── index-Dduc-P9a.js    ← v0.1.2 빌드
+    ├── index-C4CHNhkV.css
+    ├── jszip.min-CZkjPKPL.js ← v0.1.4 빌드용
+    ├── jszip.min-Dg5IA1G5.js ← 구버전
+    └── vision_bundle-Df2dKBJJ.js
 ```
 
 ---
 
-## 14. 기술 스택
+## 버전 히스토리
 
-| 항목 | 현재 (웹) | 데스크탑 목표 |
-|------|---------|------------|
-| 프레임워크 | Vite + React 18 + TypeScript | Tauri v2 + React (재사용) |
-| 상태관리 | Zustand 5.x | 동일 |
-| 얼굴 감지 | MediaPipe FaceLandmarker | InsightFace (Python) |
-| 동물 감지 | BlazeFace (부정확) | YOLO v8 (Python) |
-| 풍경 평가 | 미지원 | CLIP (Python) |
-| GPU | WebGL (제한적) | ONNX Runtime (직접 GPU) |
-| 파일 접근 | 드래그앤드롭 | 폴더 직접 접근 |
-| 내보내기 | ZIP | ZIP + Drive + iCloud + Lightroom XMP |
-| 배포 | Vercel | macOS/Windows 설치 파일 |
+| 버전 | 내용 | 배포 상태 |
+|------|------|-----------|
+| v0.1.1 | 초기 릴리즈: 사진 선별 + 취향 재추출 | ✅ 배포됨 |
+| v0.1.2 | 세션 지속성 (beforeunload + IndexedDB) | ✅ 배포됨 |
+| v0.1.3 | 앨범 기능 (피드백 + 다중폴더 + Google Drive) | ✅ GitHub 커밋 완료 |
+| v0.1.4 | 랜딩 텍스트 + 업로드 폴더 버그 수정 + 드롭 안정화 | ⏳ GitHub 커밋 완료, Vercel 수동 배포 필요 |
+| v0.2.0 | **(Phase 0 목표)** 랜딩 3카드 + Flow B 신규 + 이벤트 태깅 + 중복제거 | 예정 |
 
 ---
 
-## 15. 배포 (현재 웹)
+## 커밋 방법 (사용자 터미널)
 
-- 빌드: /tmp/vite-build에서 수행 (FUSE 제약)
-- 배포: `npx vercel --prod` (사용자 터미널, 프로젝트 폴더 내)
-- Zustand 규칙: 반드시 개별 필드 선택자 사용 (`useStore((s) => s.field)`)
+```bash
+cd ~/Desktop/"vibe coding"/ddalgak-picks
+rm -f .git/index.lock
+
+# 소스 스테이징 (변경된 파일만)
+git add src/[변경파일들]
+
+# dist 강제 추가 (빌드 후 새 해시 파일)
+git add -f dist/index.html dist/assets/index-[새해시].js
+
+git commit -m "feat: 설명 (vX.Y.Z)"
+git push origin main
+
+# Vercel 자동 배포가 안 될 경우 수동 배포:
+npx vercel --prod
+```
+
+### 다음 세션 시작 시 필요한 작업
+- v0.1.4 Vercel 배포 완료 여부 확인
+- 미배포라면: `cd ~/Desktop/"vibe coding"/ddalgak-picks && npx vercel --prod`
+- Phase 0 작업 진입 지점: 랜딩 3카드 리디자인(`Landing.tsx`) → Flow B 골격(`FolderSessionContainer.tsx`)
