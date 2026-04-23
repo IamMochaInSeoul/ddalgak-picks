@@ -93,8 +93,38 @@ export interface GroupScoreEntry {
   score: number;
 }
 
+// ─── Flow B 타입 ───────────────────────────────────────────────────────────
+export type EventTag =
+  | "maternity"
+  | "newborn"
+  | "50days"
+  | "100days"
+  | "first_birthday"
+  | "wedding"
+  | "family"
+  | "pet_profile"
+  | "travel"
+  | "other";
+
+export interface FolderSession {
+  id: string;
+  folderName: string;
+  eventTag: EventTag;
+  files: File[];
+  status: "pending" | "analyzing" | "done" | "error";
+  progress: number;     // 0~1
+  stage: string;        // 분석 단계 텍스트
+  photos: Map<string, PhotoEntry>;
+  groups: PhotoGroup[];
+  targetCount: number;
+  errorMessage?: string;
+}
+
+// ─── AppState ──────────────────────────────────────────────────────────────
 export interface AppState {
-  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album";
+  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album"
+      | "folderUpload" | "folderGallery";
+  flow: "A" | "B" | "C" | null;     // 선택된 플로우
   photoType: PhotoType | null;
   photos: Map<string, PhotoEntry>;
   groups: PhotoGroup[];
@@ -116,6 +146,9 @@ export interface AppState {
   preferenceWeights: AnalysisWeights | null;  // 피드백 반영 후 조정된 가중치
   preferenceSelected: Set<string> | null;     // 취향 기반 재추출 결과 photoId 집합
   bannerDismissed: boolean;               // 플로팅 배너 닫기 여부
+
+  // Flow B — 폴더 묶음 셀렉
+  folderSessions: FolderSession[];
 
   // 세션 지속성
   filesDetached: boolean;                 // 새로고침 후 File 객체가 없는 상태

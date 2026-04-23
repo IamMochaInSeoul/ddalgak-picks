@@ -7,6 +7,8 @@ import Analysis from "./Analysis";
 import Gallery from "./Gallery";
 import FeedbackMode from "./FeedbackMode";
 import AlbumContainer from "./AlbumContainer";
+import FolderUpload from "./FolderUpload";
+import FolderGallery from "./FolderGallery";
 import ErrorBoundary from "./ErrorBoundary";
 import {
   saveSession,
@@ -46,7 +48,7 @@ export default function AppShell() {
 
   // ── beforeunload: 분석 중 또는 갤러리에서 탭 닫기 경고 ─────────────────
   useEffect(() => {
-    if (step !== "analysis" && step !== "gallery") return;
+    if (step !== "analysis" && step !== "gallery" && step !== "folderGallery") return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = ""; // 모던 브라우저는 커스텀 메시지 무시 — 브라우저 기본 다이얼로그 표시됨
@@ -164,9 +166,11 @@ export default function AppShell() {
         {step === "typeSelect" && <TypeSelect />}
         {step === "upload"     && <Upload />}
         {step === "analysis"   && <Analysis />}
-        {step === "gallery"    && !feedbackMode && <Gallery />}
-        {step === "gallery"    && feedbackMode  && <FeedbackMode />}
-        {step === "album"      && <AlbumContainer />}
+        {step === "gallery"      && !feedbackMode && <Gallery />}
+        {step === "gallery"      && feedbackMode  && <FeedbackMode />}
+        {step === "album"        && <AlbumContainer />}
+        {step === "folderUpload" && <FolderUpload />}
+        {step === "folderGallery"&& <FolderGallery />}
       </ErrorBoundary>
     </div>
   );

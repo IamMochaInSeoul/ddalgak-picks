@@ -9,6 +9,8 @@ import type {
   PetWeights,
   Filters,
   GroupScoreEntry,
+  FolderSession,
+  EventTag,
 } from "./types";
 import {
   DEFAULT_WEIGHTS,
@@ -19,6 +21,7 @@ import type { PersistedSession } from "./sessionPersist";
 
 interface AppActions {
   setStep: (step: AppState["step"]) => void;
+  setFlow: (flow: AppState["flow"]) => void;
   setPhotoType: (type: PhotoType) => void;
   setPhotos: (photos: Map<string, PhotoEntry>) => void;
   setGroups: (groups: PhotoGroup[]) => void;
@@ -49,10 +52,19 @@ interface AppActions {
   restoreSession: (session: PersistedSession) => void;
   setFilesDetached: (v: boolean) => void;
   reattachFiles: (files: File[]) => void;
+
+  // Flow B — 폴더 묶음 셀렉
+  setFolderSessions: (sessions: FolderSession[]) => void;
+  addFolderSession: (session: FolderSession) => void;
+  updateFolderSession: (id: string, patch: Partial<FolderSession>) => void;
+  removeFolderSession: (id: string) => void;
+  setFolderSessionEventTag: (id: string, tag: EventTag) => void;
+  setFolderSessionTargetCount: (id: string, n: number) => void;
 }
 
 const initialState: AppState = {
   step: "landing",
+  flow: null,
   photoType: null,
   photos: new Map(),
   groups: [],
@@ -74,6 +86,9 @@ const initialState: AppState = {
   preferenceSelected: null,
   bannerDismissed: false,
 
+  // Flow B
+  folderSessions: [],
+
   // 세션 지속성
   filesDetached: false,
 };
@@ -82,6 +97,7 @@ export const useStore = create<AppState & AppActions>((set) => ({
   ...initialState,
 
   setStep: (step) => set({ step }),
+  setFlow: (flow) => set({ flow }),
   setPhotoType: (type) => set({ photoType: type }),
   setPhotos: (photos) => set({ photos }),
   setGroups: (groups) => set({ groups }),
@@ -197,6 +213,33 @@ export const useStore = create<AppState & AppActions>((set) => ({
   },
 
   setFilesDetached: (v) => set({ filesDetached: v }),
+
+  // Flow B 액션
+  setFolderSessions: (sessions) => set({ folderSessions: sessions }),
+  addFolderSession: (session) =>
+    set((s) => ({ folderSessions: [...s.folderSessions, session] })),
+  updateFolderSession: (id, patch) =>
+    set((s) => ({
+      folderSessions: s.folderSessions.map((fs) =>
+        fs.id === id ? { ...fs, ...patch } : fs
+      ),
+    })),
+  removeFolderSession: (id) =>
+    set((s) => ({
+      folderSessions: s.folderSessions.filter((fs) => fs.id !== id),
+    })),
+  setFolderSessionEventTag: (id, tag) =>
+    set((s) => ({
+      folderSessions: s.folderSessions.map((fs) =>
+        fs.id === id ? { ...fs, eventTag: tag } : fs
+      ),
+    })),
+  setFolderSessionTargetCount: (id, n) =>
+    set((s) => ({
+      folderSessions: s.folderSessions.map((fs) =>
+        fs.id === id ? { ...fs, targetCount: n } : fs
+      ),
+    })),
 
   // 파일 재첨부: 파일명 매칭으로 File 객체를 기존 PhotoEntry에 주입
   reattachFiles: (files) => {
