@@ -6,6 +6,7 @@ import type { PhotoEntry, PhotoGroup } from "../lib/types";
 import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
+import PaymentGate from "./PaymentGate";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 
@@ -63,9 +64,14 @@ export default function Gallery() {
   const dismissBanner        = useStore((s) => s.dismissBanner);
   const clearPreference      = useStore((s) => s.clearPreference);
 
+  const isPaid = useStore((s) => s.payment.isPaid);
+  const watermarkEnabled = useStore((s) => s.watermarkEnabled);
+  const freeZipLimit = useStore((s) => s.freeZipLimit);
+
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [reextracting, setReextracting] = useState(false);
   const [reextractDoneCount, setReextractDoneCount] = useState<number | null>(null);
@@ -162,12 +168,18 @@ export default function Gallery() {
       incrementReextract, setPhotos, setGroups, setAnalysisProgress]);
 
   const handleExport = useCallback(async () => {
+    // 무료 사용자가 freeZipLimit 초과하면 결제 게이트 표시
+    if (!isPaid && selectedPhotos.length > freeZipLimit) {
+      setShowPaymentGate(true);
+      return;
+    }
     setExporting(true);
     try {
+      const photosToExport = isPaid ? selectedPhotos : selectedPhotos.slice(0, freeZipLimit);
       const JSZip = (await import("jszip")).default;
       const zip = new JSZip();
       const folder = zip.folder("ddalgak-picks")!;
-      for (const photo of selectedPhotos) {
+      for (const photo of photosToExport) {
         const buf = await photo.file.arrayBuffer();
         folder.file(photo.file.name, buf);
       }
@@ -179,7 +191,7 @@ export default function Gallery() {
       setExported(true);
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
-  }, [selectedPhotos]);
+  }, [selectedPhotos, isPaid, freeZipLimit]);
 
   const handleCopyFileList = useCallback(() => {
     const names = selectedPhotos.map((p) => p.file.name).join("\n");
@@ -548,6 +560,11 @@ export default function Gallery() {
         <div>
           <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedPhotos.length}</span>
           <span style={{ color: "var(--text2)", fontSize: 14 }}>장 선택됨</span>
+          {!isPaid && selectedPhotos.length > freeZipLimit && (
+            <span style={{ marginLeft: 10, fontSize: 12, color: "#f59e0b" }}>
+              무료 {freeZipLimit}장 초과 — 결제 후 전체 다운로드 가능
+            </span>
+          )}
           {exported && <span style={{ marginLeft: 12, color: "var(--high)", fontSize: 13 }}>
             ✓ {tExport("done")} ({tExport("savedAs", { count: selectedPhotos.length })})
           </span>}
@@ -558,10 +575,21 @@ export default function Gallery() {
           </button>
           <button className="btn-primary" style={{ fontSize: 14, padding: "10px 24px" }}
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
-            {exporting ? tExport("downloading") : `ZIP 다운로드 (${selectedPhotos.length}장)`}
+            {exporting ? tExport("downloading")
+              : !isPaid && selectedPhotos.length > freeZipLimit
+                ? `🔒 전체 다운로드 (${selectedPhotos.length}장)`
+                : `ZIP 다운로드 (${selectedPhotos.length}장)`}
           </button>
         </div>
       </div>
+
+      {/* Payment gate modal */}
+      {showPaymentGate && (
+        <PaymentGate
+          onClose={() => setShowPaymentGate(false)}
+          onSuccess={() => { setShowPaymentGate(false); handleExport(); }}
+        />
+      )}
 
       {/* Photo modal */}
       {modalPhoto && (
