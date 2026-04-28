@@ -7,6 +7,7 @@ import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
+import { applyWatermark } from "../lib/watermark";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 
@@ -180,8 +181,14 @@ export default function Gallery() {
       const zip = new JSZip();
       const folder = zip.folder("ddalgak-picks")!;
       for (const photo of photosToExport) {
-        const buf = await photo.file.arrayBuffer();
-        folder.file(photo.file.name, buf);
+        if (watermarkEnabled) {
+          const watermarked = await applyWatermark(photo.file);
+          const baseName = photo.file.name.replace(/\.[^.]+$/, "");
+          folder.file(`${baseName}_wm.jpg`, watermarked);
+        } else {
+          const buf = await photo.file.arrayBuffer();
+          folder.file(photo.file.name, buf);
+        }
       }
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);

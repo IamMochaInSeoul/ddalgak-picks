@@ -14,6 +14,8 @@ import {
   DEFAULT_FILTERS,
 } from "../lib/types";
 import LangToggle from "./LangToggle";
+import PaymentGate from "./PaymentGate";
+import { applyWatermark } from "../lib/watermark";
 
 // ── 분석 진행 메시지 ────────────────────────────────────────────────────────
 const STAGE_LABELS: Record<string, string> = {
@@ -40,9 +42,14 @@ export default function FolderGallery() {
 
   const setPersonClusters = useStore((s) => s.setPersonClusters);
 
+  const isPaid = useStore((s) => s.payment.isPaid);
+  const watermarkEnabled = useStore((s) => s.watermarkEnabled);
+  const freeZipLimit = useStore((s) => s.freeZipLimit);
+
   const [activeTab, setActiveTab] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported]   = useState(false);
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
   const analysisStarted = useRef(false);
   const sessionClusters = useRef<Map<string, PersonCluster>[]>([]);
 
@@ -117,19 +124,37 @@ export default function FolderGallery() {
   // ── ZIP 다운로드 ───────────────────────────────────────────────────────────
   const handleExport = useCallback(async () => {
     if (exporting) return;
+
+    // 무료 제한 초과 시 결제 게이트
+    const totalSelected = folderSessions.reduce((sum, s) =>
+      sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0);
+    if (!isPaid && totalSelected > freeZipLimit) {
+      setShowPaymentGate(true);
+      return;
+    }
+
     setExporting(true);
     setExported(false);
     try {
       const JSZip = (await import("jszip")).default;
       const zip = new JSZip();
+      let freeRemaining = isPaid ? Infinity : freeZipLimit;
 
       for (const session of folderSessions) {
         if (session.status !== "done") continue;
         const folder = zip.folder(session.folderName)!;
         for (const photo of session.photos.values()) {
           if (!photo.isSelected || !photo.file) continue;
-          const buf = await photo.file.arrayBuffer();
-          folder.file(photo.file.name, buf);
+          if (freeRemaining <= 0) break;
+          if (watermarkEnabled) {
+            const watermarked = await applyWatermark(photo.file);
+            const baseName = photo.file.name.replace(/\.[^.]+$/, "");
+            folder.file(`${baseName}_wm.jpg`, watermarked);
+          } else {
+            const buf = await photo.file.arrayBuffer();
+            folder.file(photo.file.name, buf);
+          }
+          if (!isPaid) freeRemaining--;
         }
       }
 
@@ -146,7 +171,7 @@ export default function FolderGallery() {
     } finally {
       setExporting(false);
     }
-  }, [folderSessions, exporting]);
+  }, [folderSessions, exporting, isPaid, watermarkEnabled, freeZipLimit]);
 
   // ── 현재 탭 세션 ──────────────────────────────────────────────────────────
   const activeSession: FolderSession | undefined = folderSessions[activeTab];
@@ -422,6 +447,13 @@ export default function FolderGallery() {
             )}
           </div>
         </div>
+      )}
+
+      {showPaymentGate && (
+        <PaymentGate
+          onClose={() => setShowPaymentGate(false)}
+          onSuccess={() => { setShowPaymentGate(false); handleExport(); }}
+        />
       )}
     </div>
   );
