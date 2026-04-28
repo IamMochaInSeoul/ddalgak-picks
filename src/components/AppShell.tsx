@@ -12,6 +12,7 @@ import FolderGallery from "./FolderGallery";
 import StudioTypeSelect from "./StudioTypeSelect";
 import PersonSelect from "./PersonSelect";
 import ErrorBoundary from "./ErrorBoundary";
+import { ToastContainer } from "./Toast";
 import {
   saveSession,
   loadSession,
@@ -163,6 +164,7 @@ export default function AppShell() {
         </div>
       )}
 
+      <ToastContainer />
       <ErrorBoundary>
         {step === "landing"    && <Landing />}
         {step === "typeSelect" && <TypeSelect />}

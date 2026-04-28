@@ -248,20 +248,24 @@ export default function Upload() {
           </div>
         </div>
 
-        {/* ── 선택 요약 ── */}
+        {/* ── 선택 요약 + 예상 시간 ── */}
         {files.length > 0 && (
           <div style={{ padding: "12px 16px", borderRadius: 8, background: "rgba(108,99,255,0.1)",
-            border: "1px solid rgba(108,99,255,0.3)", marginBottom: 16, fontSize: 13, color: "var(--accent2)",
-            display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span>
-              📸 {files.length}장 선택 · 목표: {targetCount}장 · 유사사진 최대: {maxPerGroup >= 9999 ? "무제한" : `${maxPerGroup}장`}
-            </span>
-            <button
-              onClick={() => setFiles([])}
-              style={{ background: "none", border: "none", cursor: "pointer",
-                color: "var(--text2)", fontSize: 12, padding: "2px 6px" }}>
-              ✕ 초기화
-            </button>
+            border: "1px solid rgba(108,99,255,0.3)", marginBottom: 16, fontSize: 13, color: "var(--accent2)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <span>
+                📸 {files.length}장 선택 · 목표: {targetCount}장 · 유사사진 최대: {maxPerGroup >= 9999 ? "무제한" : `${maxPerGroup}장`}
+              </span>
+              <button
+                onClick={() => setFiles([])}
+                style={{ background: "none", border: "none", cursor: "pointer",
+                  color: "var(--text2)", fontSize: 12, padding: "2px 6px" }}>
+                ✕ 초기화
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)" }}>
+              ⏱ 약 {Math.max(1, Math.round(files.length * 0.8 / 60))}분 안에 셀렉이 끝나요
+            </div>
           </div>
         )}
 

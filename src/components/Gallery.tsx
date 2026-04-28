@@ -9,6 +9,7 @@ import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import { applyWatermark } from "../lib/watermark";
 import { assignDisplayNames, zipFilename } from "../lib/displayName";
+import { showToast } from "./Toast";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 
@@ -174,6 +175,7 @@ export default function Gallery() {
       // 완료된 선택 장수 계산 후 toast 표시 (3초)
       const selectedCount = [...result.photos.values()].filter((p) => p.isSelected).length;
       setReextractDoneCount(selectedCount);
+      showToast(`${selectedCount}장 재선별 완료!`, "🔄");
       setTimeout(() => setReextractDoneCount(null), 3000);
     } catch (err) { console.error(err); }
     finally { setReextracting(false); }
@@ -207,9 +209,10 @@ export default function Gallery() {
       a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
       URL.revokeObjectURL(url);
       setExported(true);
+      showToast(`${photosToExport.length}장 ZIP 저장 완료!`, "🎉");
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
-  }, [selectedPhotos, isPaid, freeZipLimit]);
+  }, [selectedPhotos, isPaid, freeZipLimit, watermarkEnabled]);
 
   const handleCopyFileList = useCallback(() => {
     const names = selectedPhotos.map((p) => p.displayName ?? p.file.name).join("\n");
