@@ -7,6 +7,9 @@ import type {
   PetWeights,
   Filters,
   ConfidenceGrade,
+  FaceFeature,
+  PersonCluster,
+  Landmark,
 } from "./types";
 import { laplacianVariance, sharpnessScore } from "./laplacian";
 import { pHash, groupByHash, clusterScenes } from "./phash";
@@ -18,6 +21,15 @@ import {
   calcGroupConfidence,
   selectTopPhotosWithSceneDiversity,
 } from "./scorer";
+import {
+  computeEARBoth,
+  computeMAR,
+  computeCheekRise,
+  computeMouthCornerAngle,
+  classifyEye,
+} from "./eye";
+import { computeFaceEmbedding } from "./faceEmbedding";
+import { clusterPersons } from "./personClustering";
 
 const THUMB_SIZE = 400;
 const MEDIAPIPE_VERSION = "0.10.34";
@@ -154,7 +166,12 @@ export async function analyzePhotos(
   _filters: Filters,
   onProgress: (current: number, total: number, stage: string) => void,
   maxPerGroup = 2
-): Promise<{ photos: Map<string, PhotoEntry>; groups: PhotoGroup[] }> {
+): Promise<{
+  photos: Map<string, PhotoEntry>;
+  groups: PhotoGroup[];
+  groupScoresWithScene: { groupId: string; sceneId: string; photoId: string; score: number }[];
+  personClusters: Map<string, PersonCluster>;
+}> {
   const total = files.length;
   const photosMap = new Map<string, PhotoEntry>();
   const hashEntries: { id: string; hash: bigint }[] = [];
@@ -454,6 +471,7 @@ export async function analyzePhotos(
           let worstBlendshapes: Record<string, number> = {};
           let headYaw = 0;
           let headPitch = 0;
+          const faceFeaturesList: FaceFeature[] = [];
 
           for (let fi = 0; fi < faces.length; fi++) {
             const bs: Record<string, number> = {};
@@ -481,7 +499,48 @@ export async function analyzePhotos(
               headYaw = yaw;
               headPitch = pitch;
             }
+
+            // §3 — FaceFeature 빌드 (embedding + clustering 소스)
+            if (face_landmarks && face_landmarks.length >= 468) {
+              const lm = face_landmarks as unknown as Landmark[];
+              const { earLeft, earRight } = computeEARBoth(lm);
+              const marInner = computeMAR(lm);
+              const cheekRise = computeCheekRise(lm);
+              const mouthCornerAngle = computeMouthCornerAngle(lm);
+              const eyeClass = classifyEye({ earLeft, earRight, marInner, cheekRise, mouthCornerAngle });
+
+              // bbox from landmark min/max
+              let minX = 1, maxX = 0, minY = 1, maxY = 0;
+              for (const pt of lm) {
+                if (pt.x < minX) minX = pt.x;
+                if (pt.x > maxX) maxX = pt.x;
+                if (pt.y < minY) minY = pt.y;
+                if (pt.y > maxY) maxY = pt.y;
+              }
+
+              // roll from eye corners (right=33, left=263)
+              const rEye = lm[33], lEye = lm[263];
+              const roll = (rEye && lEye)
+                ? Math.atan2(rEye.y - lEye.y, lEye.x - rEye.x) * (180 / Math.PI)
+                : 0;
+
+              faceFeaturesList.push({
+                bbox: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
+                earLeft, earRight,
+                marInner,
+                cheekRise,
+                mouthCornerAngle,
+                yaw, pitch, roll,
+                isGenuineEyeClose: eyeClass.isGenuineEyeClose,
+                isLaughingSquint: eyeClass.isLaughingSquint,
+                isFacingCamera: Math.abs(yaw) < 30 && Math.abs(pitch) < 25,
+                faceConfidence: Math.max(0.3, faceScore.facing),
+                embedding: computeFaceEmbedding(lm),
+              });
+            }
           }
+
+          if (faceFeaturesList.length > 0) entry.faces = faceFeaturesList;
 
           const finalScore = calcPortraitScore(worstBlendshapes, headYaw, headPitch, sharpFace, weights);
           entry.score = finalScore;
@@ -547,6 +606,24 @@ export async function analyzePhotos(
     }
   }
 
+  // ── Stage 3.7: 인물 클러스터링 ───────────────────────────────────────────────
+  onProgress(total, total, "person_clustering");
+  const personClusters = clusterPersons(photosMap);
+
+  // personId를 각 PhotoEntry에 역주입
+  for (const [personId, cluster] of personClusters) {
+    for (const photoId of cluster.photoIds) {
+      const e = photosMap.get(photoId);
+      if (!e) continue;
+      if (!e.presentPersonIds) e.presentPersonIds = [];
+      if (!e.presentPersonIds.includes(personId)) e.presentPersonIds.push(personId);
+      // 대표 사진에 primaryPersonId 설정
+      if (!e.primaryPersonId && photoId === cluster.representativePhotoId) {
+        e.primaryPersonId = personId;
+      }
+    }
+  }
+
   // ── Stage 4: 씬 클러스터링 → 씬 다양성 선별 ──────────────────────────────
   onProgress(total, total, "selecting");
 
@@ -598,5 +675,5 @@ export async function analyzePhotos(
     group.selectedId = sel ?? null;
   }
 
-  return { photos: photosMap, groups, groupScoresWithScene };
+  return { photos: photosMap, groups, groupScoresWithScene, personClusters };
 }
