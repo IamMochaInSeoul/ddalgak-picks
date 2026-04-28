@@ -5,8 +5,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { analyzePhotos } from "../lib/analyzer";
+import { mergePersonClusters } from "../lib/personClustering";
 import { EVENT_TAG_LABELS } from "../lib/eventTagger";
-import type { AppState, FolderSession, PhotoEntry } from "../lib/types";
+import type { AppState, FolderSession, PersonCluster, PhotoEntry } from "../lib/types";
 import {
   DEFAULT_WEIGHTS,
   DEFAULT_PET_WEIGHTS,
@@ -37,10 +38,13 @@ export default function FolderGallery() {
   const updateSession   = useStore((s) => s.updateFolderSession);
   const maxPerGroup     = useStore((s) => s.maxPerGroup);
 
+  const setPersonClusters = useStore((s) => s.setPersonClusters);
+
   const [activeTab, setActiveTab] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported]   = useState(false);
   const analysisStarted = useRef(false);
+  const sessionClusters = useRef<Map<string, PersonCluster>[]>([]);
 
   // ── 분석 실행 (sequential per folder) ────────────────────────────────────
   useEffect(() => {
@@ -71,6 +75,7 @@ export default function FolderGallery() {
             maxPerGroup
           );
 
+          sessionClusters.current.push(result.personClusters);
           updateSession(session.id, {
             status: "done",
             progress: 1,
@@ -84,6 +89,17 @@ export default function FolderGallery() {
             status: "error",
             errorMessage: err instanceof Error ? err.message : "알 수 없는 오류",
           });
+        }
+      }
+
+      // 모든 폴더 완료 후 — 인물 클러스터 병합 및 PersonSelect 라우팅
+      if (sessionClusters.current.length > 0) {
+        const merged = mergePersonClusters(sessionClusters.current);
+        setPersonClusters(merged);
+        const clusteringOn = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "true";
+        if (clusteringOn && merged.size > 0) {
+          setStep("personSelect");
+          return;
         }
       }
     })();

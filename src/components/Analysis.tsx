@@ -14,6 +14,7 @@ export default function Analysis() {
   const setPhotos = useStore((s) => s.setPhotos);
   const setGroups = useStore((s) => s.setGroups);
   const setGroupScoresWithScene = useStore((s) => s.setGroupScoresWithScene);
+  const setPersonClusters = useStore((s) => s.setPersonClusters);
   const setStep = useStore((s) => s.setStep);
   const setAnalysisProgress = useStore((s) => s.setAnalysisProgress);
   const progress = useStore((s) => s.analysisProgress);
@@ -31,11 +32,13 @@ export default function Analysis() {
 
     analyzePhotos(files, photoType, targetCount, weights, petWeights, filters,
       (current, total, stageKey) => setAnalysisProgress(current, total, stageKey), maxPerGroup)
-      .then(({ photos, groups, groupScoresWithScene }) => {
+      .then(({ photos, groups, groupScoresWithScene, personClusters }) => {
         setPhotos(photos);
         setGroups(groups);
         setGroupScoresWithScene(groupScoresWithScene);
-        setStep("gallery");
+        setPersonClusters(personClusters);
+        const clusteringOn = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "true";
+        setStep(clusteringOn && personClusters.size > 0 ? "personSelect" : "gallery");
       })
       .catch((err) => {
         console.error("[ddalgak-picks] Analysis failed:", err);

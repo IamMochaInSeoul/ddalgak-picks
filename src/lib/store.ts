@@ -12,6 +12,7 @@ import type {
   FolderSession,
   EventTag,
   PersonCluster,
+  HeroConfig,
 } from "./types";
 import {
   DEFAULT_WEIGHTS,
@@ -19,6 +20,7 @@ import {
   DEFAULT_FILTERS,
 } from "./types";
 import type { PersistedSession } from "./sessionPersist";
+import { applyHeroScores } from "./heroScore";
 
 interface AppActions {
   setStep: (step: AppState["step"]) => void;
@@ -70,6 +72,9 @@ interface AppActions {
   // v3.0 신규 — 결제
   setPayment: (state: import("./types").ClientPaymentState) => void;
   setWatermarkEnabled: (v: boolean) => void;
+
+  // §3.9 — 주인공 점수 일괄 적용 (Flow A + Flow B 통합)
+  applyHeroConfig: (config: HeroConfig) => void;
 }
 
 const initialState: AppState = {
@@ -274,6 +279,33 @@ export const useStore = create<AppState & AppActions>((set) => ({
   // v3.0 신규 — 결제
   setPayment: (state) => set({ payment: state }),
   setWatermarkEnabled: (v) => set({ watermarkEnabled: v }),
+
+  // §3.9 — 주인공 점수 일괄 적용
+  applyHeroConfig: (config) =>
+    set((s) => {
+      // 클러스터 isHero 갱신
+      const personClusters = new Map(s.personClusters);
+      for (const [id, cluster] of personClusters) {
+        personClusters.set(id, {
+          ...cluster,
+          isHero: config.selectedPersonIds.includes(id),
+        });
+      }
+
+      // Flow A — 전역 사진에 적용
+      const photos = new Map(s.photos);
+      if (photos.size > 0) applyHeroScores(photos, config, personClusters);
+
+      // Flow B — 각 폴더 세션에 적용
+      const folderSessions = s.folderSessions.map((fs) => {
+        if (fs.photos.size === 0) return fs;
+        const sessionPhotos = new Map(fs.photos);
+        applyHeroScores(sessionPhotos, config, personClusters);
+        return { ...fs, photos: sessionPhotos };
+      });
+
+      return { heroConfig: config, personClusters, photos, folderSessions };
+    }),
 
   // 파일 재첨부: 파일명 매칭으로 File 객체를 기존 PhotoEntry에 주입
   reattachFiles: (files) => {

@@ -10,6 +10,7 @@ import AlbumContainer from "./AlbumContainer";
 import FolderUpload from "./FolderUpload";
 import FolderGallery from "./FolderGallery";
 import StudioTypeSelect from "./StudioTypeSelect";
+import PersonSelect from "./PersonSelect";
 import ErrorBoundary from "./ErrorBoundary";
 import {
   saveSession,
@@ -173,6 +174,7 @@ export default function AppShell() {
         {step === "studioSelect"  && <StudioTypeSelect />}
         {step === "folderUpload"  && <FolderUpload />}
         {step === "folderGallery" && <FolderGallery />}
+        {step === "personSelect"  && <PersonSelect />}
       </ErrorBoundary>
     </div>
   );
