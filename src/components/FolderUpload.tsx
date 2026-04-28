@@ -17,6 +17,14 @@ import { inferEventTag, EVENT_TAG_LABELS, ALL_EVENT_TAGS } from "../lib/eventTag
 import type { EventTag, FolderSession } from "../lib/types";
 import LangToggle from "./LangToggle";
 import type { AppState } from "../lib/types";
+import {
+  getGoogleAccessToken,
+  openDrivePicker,
+  listDriveFolder,
+  downloadDriveFile,
+  isDriveAvailable,
+} from "../lib/googleDrive";
+import { showToast } from "./Toast";
 
 const IMAGE_EXT = /\.(jpe?g|png|heic|heif|webp|avif|tiff?|bmp|gif)$/i;
 
@@ -81,6 +89,8 @@ export default function FolderUpload() {
 
   const [dragging, setDragging]   = useState(false);
   const [loading, setLoading]     = useState(false);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveStatus, setDriveStatus] = useState<string | null>(null);
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [errorMsg, setErrorMsg]   = useState<string | null>(null);
   // inputKey: 선택 완료 때마다 증가 → <input>을 remount → 같은 폴더 재선택도 onChange 발화
@@ -174,6 +184,55 @@ export default function FolderUpload() {
     }
   }, [addFolderSession, globalTargetCount]);
 
+  // ── Google Drive 경로 ─────────────────────────────────────────────────────
+  const handleDriveImport = useCallback(async () => {
+    setDriveLoading(true);
+    setErrorMsg(null);
+    setDriveStatus(null);
+    try {
+      const token = await getGoogleAccessToken();
+      const picked = await openDrivePicker(token);
+
+      if (picked.type === "folder") {
+        setDriveStatus(`📂 ${picked.name} 파일 목록 가져오는 중...`);
+        const items = await listDriveFolder(picked.id, token);
+        if (items.length === 0) {
+          setErrorMsg("선택한 Drive 폴더에서 이미지를 찾지 못했어요.");
+          return;
+        }
+        setDriveStatus(`⬇ ${items.length}장 다운로드 중...`);
+        const files: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          setDriveStatus(`⬇ ${i + 1} / ${items.length}장 다운로드 중...`);
+          const f = await downloadDriveFile(items[i], token);
+          files.push(f);
+        }
+        addFolderSession(makeSession(picked.name, files, inferEventTag(picked.name), globalTargetCount));
+        showToast(`${picked.name} — ${files.length}장 가져왔어요!`, "✅");
+        setDriveStatus(null);
+      } else {
+        const items = picked.items ?? [];
+        if (items.length === 0) { setErrorMsg("선택한 파일이 없어요."); return; }
+        setDriveStatus(`⬇ ${items.length}장 다운로드 중...`);
+        const files: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          setDriveStatus(`⬇ ${i + 1} / ${items.length}장 다운로드 중...`);
+          files.push(await downloadDriveFile(items[i], token));
+        }
+        addFolderSession(makeSession("Drive 사진", files, "other", globalTargetCount));
+        showToast(`${files.length}장 가져왔어요!`, "✅");
+        setDriveStatus(null);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message !== "cancelled") {
+        setErrorMsg(`Drive 연동 오류: ${err.message}`);
+      }
+      setDriveStatus(null);
+    } finally {
+      setDriveLoading(false);
+    }
+  }, [addFolderSession, globalTargetCount]);
+
   // ── 분석 시작 ────────────────────────────────────────────────────────────
 
   const startAnalysis = () => {
@@ -251,12 +310,39 @@ export default function FolderUpload() {
         {/* ── 폴더 선택 버튼 ── */}
         <button
           className="btn-secondary"
-          style={{ width: "100%", fontSize: 14, padding: "11px 0", marginBottom: 24 }}
-          disabled={loading}
+          style={{ width: "100%", fontSize: 14, padding: "11px 0", marginBottom: isDriveAvailable() ? 10 : 24 }}
+          disabled={loading || driveLoading}
           onClick={() => folderInputRef.current?.click()}
         >
           📁 폴더 선택하기 (한 폴더씩 반복 추가 가능)
         </button>
+
+        {/* ── Google Drive 버튼 ── */}
+        {isDriveAvailable() && (
+          <button
+            className="btn-secondary"
+            style={{ width: "100%", fontSize: 14, padding: "11px 0", marginBottom: 24,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            disabled={loading || driveLoading}
+            onClick={handleDriveImport}
+          >
+            {driveLoading ? (
+              <span style={{ color: "var(--text2)" }}>{driveStatus ?? "Drive 연결 중..."}</span>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 87.3 78" fill="none">
+                  <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29.4 48H0c0 1.55.4 3.1 1.2 4.5L6.6 66.85z" fill="#0066DA"/>
+                  <path d="M43.65 25L29.4 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.5C.4 44.9 0 46.45 0 48h29.4l14.25-23z" fill="#00AC47"/>
+                  <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H57.9l6.2 11.9 9.45 11.9z" fill="#EA4335"/>
+                  <path d="M43.65 25L57.9 48h29.4c0-1.55-.4-3.1-1.2-4.5L61.55 3.3c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25z" fill="#00832D"/>
+                  <path d="M57.9 48H29.4L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2L57.9 48z" fill="#2684FC"/>
+                  <path d="M73.4 24L58.25 3.3c-.8-1.4-1.95-2.5-3.3-3.3H32.35c-1.35.8-2.5 1.9-3.3 3.3L43.65 25l13.95-1 15.8 0z" fill="#FFBA00"/>
+                </svg>
+                Google Drive에서 가져오기
+              </>
+            )}
+          </button>
+        )}
 
         {/* key 변경으로 remount → 같은 폴더 재선택도 onChange 발화 보장 */}
         {/* accept 속성 없음: webkitdirectory + accept 조합 시 브라우저가 files를 비워버림 */}
