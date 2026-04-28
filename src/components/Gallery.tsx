@@ -8,6 +8,7 @@ import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import { applyWatermark } from "../lib/watermark";
+import { assignDisplayNames, zipFilename } from "../lib/displayName";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 
@@ -94,6 +95,17 @@ export default function Gallery() {
   // Context menu state
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; photoId: string } | null>(null);
   const ctxRef = useRef<HTMLDivElement>(null);
+
+  // displayName 최초 1회 할당 (선택 확정 후)
+  useEffect(() => {
+    const named = assignDisplayNames(photos, photoType);
+    // 변경된 항목이 있을 때만 store 업데이트
+    let changed = false;
+    for (const [id, p] of named) {
+      if (p.displayName !== photos.get(id)?.displayName) { changed = true; break; }
+    }
+    if (changed) setPhotos(named);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allPhotos = [...photos.values()];
   // 취향 뷰 vs AI 기본 뷰 전환
@@ -183,11 +195,10 @@ export default function Gallery() {
       for (const photo of photosToExport) {
         if (watermarkEnabled) {
           const watermarked = await applyWatermark(photo.file);
-          const baseName = photo.file.name.replace(/\.[^.]+$/, "");
-          folder.file(`${baseName}_wm.jpg`, watermarked);
+          folder.file(zipFilename(photo, true), watermarked);
         } else {
           const buf = await photo.file.arrayBuffer();
-          folder.file(photo.file.name, buf);
+          folder.file(zipFilename(photo, false), buf);
         }
       }
       const blob = await zip.generateAsync({ type: "blob" });
@@ -201,7 +212,7 @@ export default function Gallery() {
   }, [selectedPhotos, isPaid, freeZipLimit]);
 
   const handleCopyFileList = useCallback(() => {
-    const names = selectedPhotos.map((p) => p.file.name).join("\n");
+    const names = selectedPhotos.map((p) => p.displayName ?? p.file.name).join("\n");
     navigator.clipboard.writeText(names).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }, [selectedPhotos]);
 
