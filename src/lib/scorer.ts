@@ -5,6 +5,8 @@ import type {
   PetScore,
   DeductionCode,
   ConfidenceGrade,
+  PhotoEntry,
+  HeroConfig,
 } from "./types";
 
 /** Calculate portrait (person) quality score from MediaPipe results */
@@ -219,4 +221,61 @@ export function selectTopPhotosWithSceneDiversity(
   }
 
   return selectedIds;
+}
+
+type ScoredGroup = { groupId: string; sceneId: string; photoId: string; score: number };
+
+/**
+ * §3.9 — hero-aware top-N selection.
+ *
+ * When heroes are configured:
+ *   - Reserves guaranteeNonHeroCount slots for photos without the hero (variety)
+ *   - Fills remaining slots from hero-present photos using finalScore
+ *   - AND-mode hero_absent photos are excluded from hero pool
+ *
+ * Falls back to selectTopPhotosWithSceneDiversity when no heroes are set.
+ */
+export function selectTopPhotosWithHero(
+  groupScores: ScoredGroup[],
+  photos: Map<string, PhotoEntry>,
+  heroConfig: HeroConfig,
+  n: number,
+  maxPerGroup = 2
+): Set<string> {
+  const { selectedPersonIds, mode, guaranteeNonHeroCount } = heroConfig;
+
+  if (selectedPersonIds.length === 0) {
+    return selectTopPhotosWithSceneDiversity(groupScores, n, maxPerGroup);
+  }
+
+  // Override score with finalScore when available
+  const withFinal = groupScores.map((g) => {
+    const fs = photos.get(g.photoId)?.finalScore;
+    return fs != null ? { ...g, score: fs } : g;
+  });
+
+  // Partition into hero pool and non-hero pool
+  const heroPool: ScoredGroup[] = [];
+  const nonHeroPool: ScoredGroup[] = [];
+
+  for (const g of withFinal) {
+    const entry = photos.get(g.photoId);
+    const matchKind = entry?.heroMatchKind;
+    const hardExcluded = mode === "AND" &&
+      entry?.exclusionReasons?.some((r) => r.kind === "hero_absent");
+
+    if (hardExcluded || !matchKind || matchKind === "none") {
+      nonHeroPool.push(g);
+    } else {
+      heroPool.push(g);
+    }
+  }
+
+  const nonHeroTarget = Math.min(guaranteeNonHeroCount, Math.floor(n * 0.25));
+  const heroTarget = n - nonHeroTarget;
+
+  const heroSelected    = selectTopPhotosWithSceneDiversity(heroPool, heroTarget, maxPerGroup);
+  const nonHeroSelected = selectTopPhotosWithSceneDiversity(nonHeroPool, nonHeroTarget, maxPerGroup);
+
+  return new Set([...heroSelected, ...nonHeroSelected]);
 }

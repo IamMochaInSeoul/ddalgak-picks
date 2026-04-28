@@ -26,6 +26,7 @@ import {
   computeMAR,
   computeCheekRise,
   computeMouthCornerAngle,
+  computeGaze,
   classifyEye,
 } from "./eye";
 import { computeFaceEmbedding } from "./faceEmbedding";
@@ -524,6 +525,8 @@ export async function analyzePhotos(
                 ? Math.atan2(rEye.y - lEye.y, lEye.x - rEye.x) * (180 / Math.PI)
                 : 0;
 
+              const gaze = computeGaze(lm);
+
               faceFeaturesList.push({
                 bbox: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
                 earLeft, earRight,
@@ -536,6 +539,9 @@ export async function analyzePhotos(
                 isFacingCamera: Math.abs(yaw) < 30 && Math.abs(pitch) < 25,
                 faceConfidence: Math.max(0.3, faceScore.facing),
                 embedding: computeFaceEmbedding(lm),
+                irisOffset: gaze.irisOffset,
+                isLookingAtCamera: gaze.isLookingAtCamera,
+                gazeConfidence: gaze.gazeConfidence,
               });
             }
           }

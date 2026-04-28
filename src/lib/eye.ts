@@ -63,6 +63,53 @@ export function computeEARBoth(lm: Landmark[]): { earLeft: number; earRight: num
 }
 
 /**
+ * §3.8 — gaze estimation from iris landmarks (468/473).
+ * Returns normalized iris offset from eye center + camera-gaze flag.
+ */
+export function computeGaze(lm: Landmark[]): {
+  irisOffset: { x: number; y: number };
+  isLookingAtCamera: boolean;
+  gazeConfidence: number;
+} {
+  const GAZE_THRESHOLD = 0.15;
+  const noGaze = { irisOffset: { x: 0, y: 0 }, isLookingAtCamera: false, gazeConfidence: 0 };
+
+  if (lm.length < 478) return noGaze;
+
+  const rIris = lm[468]; // right iris center (MediaPipe index)
+  const lIris = lm[473]; // left iris center
+  if (!rIris || !lIris) return noGaze;
+
+  // Eye centers from corner landmarks
+  const rOuter = lm[33], rInner = lm[133];
+  const lInner = lm[362], lOuter = lm[263];
+  if (!rOuter || !rInner || !lInner || !lOuter) return noGaze;
+
+  const rEyeW = Math.abs(rOuter.x - rInner.x);
+  const lEyeW = Math.abs(lOuter.x - lInner.x);
+  const rCtrX = (rOuter.x + rInner.x) / 2;
+  const rCtrY = (rOuter.y + rInner.y) / 2;
+  const lCtrX = (lInner.x + lOuter.x) / 2;
+  const lCtrY = (lInner.y + lOuter.y) / 2;
+
+  const rOffX = rEyeW > 1e-4 ? (rIris.x - rCtrX) / rEyeW : 0;
+  const rOffY = rEyeW > 1e-4 ? (rIris.y - rCtrY) / rEyeW : 0;
+  const lOffX = lEyeW > 1e-4 ? (lIris.x - lCtrX) / lEyeW : 0;
+  const lOffY = lEyeW > 1e-4 ? (lIris.y - lCtrY) / lEyeW : 0;
+
+  const avgX = (rOffX + lOffX) / 2;
+  const avgY = (rOffY + lOffY) / 2;
+  const dist = Math.hypot(avgX, avgY);
+  const isLooking = dist < GAZE_THRESHOLD;
+
+  return {
+    irisOffset: { x: avgX, y: avgY },
+    isLookingAtCamera: isLooking,
+    gazeConfidence: isLooking ? Math.max(0, 1 - dist / GAZE_THRESHOLD) : 0,
+  };
+}
+
+/**
  * §3.1.2 decision tree.
  * Returns eyeOpen [0-1] + eye-state flags.
  */
