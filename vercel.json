@@ -1,5 +1,5 @@
 {
-  "buildCommand": "echo 'pre-built'",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null
 }
