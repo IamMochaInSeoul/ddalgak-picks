@@ -1,0 +1,6 @@
+{
+  "_readme": "시선 추정 벤치마크. 카메라를 보고 있는지 라벨.",
+  "_format": "{ photoId: string → { lookingAtCamera: boolean } }",
+  "_gates": { "accuracy": 0.80 },
+  "photos": {}
+}

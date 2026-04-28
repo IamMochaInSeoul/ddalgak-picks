@@ -1,0 +1,6 @@
+{
+  "_readme": "인물 클러스터링 벤치마크. 각 사진에 실제 personId 라벨.",
+  "_format": "{ photoId: string → { personId: string } }",
+  "_gates": { "samePersonMatchRate": 0.90, "differentPersonSeparationRate": 0.95 },
+  "photos": {}
+}

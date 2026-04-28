@@ -1,0 +1,6 @@
+{
+  "_readme": "B급 사진 리콜 벤치마크 레이블. 각 사진은 실제 사진가/어드민이 수동 라벨링.",
+  "_format": "{ photoId: string → { grade: 'S'|'A'|'B', reasons: string[] } }",
+  "_gates": { "recall": 0.92, "fpr": 0.08, "f1": 0.85 },
+  "photos": {}
+}
