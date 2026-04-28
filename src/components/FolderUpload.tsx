@@ -9,7 +9,7 @@ import type { EventTag, FolderSession } from "../lib/types";
 import LangToggle from "./LangToggle";
 import type { AppState } from "../lib/types";
 
-const IMAGE_EXT = /\.(jpe?g|png|heic|heif|webp|avif|tiff?)$/i;
+const IMAGE_EXT = /\.(jpe?g|png|heic|heif|webp|avif|tiff?|bmp|gif)$/i;
 
 // ── FileSystemEntry 유틸 ────────────────────────────────────────────────────
 async function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
@@ -56,20 +56,27 @@ export default function FolderUpload() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   // ── 폴더 처리 ────────────────────────────────────────────────────────────
   const processFolderEntries = useCallback(async (entries: FileSystemEntry[]) => {
     setLoading(true);
+    setErrorMsg(null);
+    let addedCount = 0;
     try {
       const dirEntries = entries.filter((e) => e.isDirectory);
       const fileEntries = entries.filter((e) => e.isFile);
 
       if (dirEntries.length > 0) {
-        // 폴더 단위 처리
         for (const entry of dirEntries) {
-          const files = await collectImageFiles(entry);
+          let files: File[] = [];
+          try {
+            files = await collectImageFiles(entry);
+          } catch {
+            continue;
+          }
           if (files.length === 0) continue;
           const session: FolderSession = {
             id: `fs-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -84,13 +91,18 @@ export default function FolderUpload() {
             targetCount: globalTargetCount,
           };
           addFolderSession(session);
+          addedCount++;
+        }
+        if (addedCount === 0) {
+          setErrorMsg("드롭한 폴더에서 이미지를 찾지 못했어요. JPG/PNG/HEIC 파일이 있는 폴더인지 확인해주세요.");
         }
       } else if (fileEntries.length > 0) {
-        // 폴더 없이 파일만 드롭한 경우 — "드롭된 사진"으로 묶음
         const files: File[] = [];
         for (const entry of fileEntries) {
-          const f = await new Promise<File>((res, rej) => (entry as FileSystemFileEntry).file(res, rej));
-          if (IMAGE_EXT.test(f.name)) files.push(f);
+          try {
+            const f = await new Promise<File>((res, rej) => (entry as FileSystemFileEntry).file(res, rej));
+            if (IMAGE_EXT.test(f.name)) files.push(f);
+          } catch { /* skip */ }
         }
         if (files.length > 0) {
           const session: FolderSession = {
@@ -106,6 +118,8 @@ export default function FolderUpload() {
             targetCount: globalTargetCount,
           };
           addFolderSession(session);
+        } else {
+          setErrorMsg("드롭한 파일 중 이미지가 없어요. JPG/PNG/HEIC 파일을 드롭해주세요.");
         }
       }
     } finally {
@@ -130,8 +144,13 @@ export default function FolderUpload() {
   const onFolderInputChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputFiles = e.target.files;
     if (!inputFiles || inputFiles.length === 0) return;
+    setErrorMsg(null);
     const arr = Array.from(inputFiles).filter((f) => IMAGE_EXT.test(f.name));
-    if (arr.length === 0) return;
+    if (arr.length === 0) {
+      setErrorMsg("선택한 폴더에서 이미지를 찾지 못했어요. JPG/PNG/HEIC 파일이 있는 폴더인지 확인해주세요.");
+      e.target.value = "";
+      return;
+    }
 
     // webkitRelativePath를 이용해 폴더별로 그룹핑
     const byFolder = new Map<string, File[]>();
@@ -220,6 +239,17 @@ export default function FolderUpload() {
           )}
         </div>
 
+        {/* 에러 메시지 */}
+        {errorMsg && (
+          <div style={{
+            background: "rgba(255,80,80,0.12)", border: "1.5px solid rgba(255,80,80,0.4)",
+            borderRadius: 10, padding: "10px 16px", marginBottom: 12,
+            fontSize: 13, color: "#ff5050",
+          }}>
+            ⚠️ {errorMsg}
+          </div>
+        )}
+
         {/* 폴더 선택 버튼 */}
         <button
           className="btn-secondary"
@@ -232,7 +262,6 @@ export default function FolderUpload() {
         <input ref={folderInputRef} type="file" multiple
           // @ts-ignore
           webkitdirectory=""
-          accept="image/jpeg,image/png,image/heic,image/heif,image/webp,image/avif,image/tiff"
           style={{ display: "none" }}
           onChange={onFolderInputChange}
         />
