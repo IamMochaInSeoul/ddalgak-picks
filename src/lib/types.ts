@@ -1,3 +1,5 @@
+// ─── 기존 v0.2.x 타입 (변경 금지) ────────────────────────────────────────────
+
 export type PhotoType = "portrait" | "pet" | "mixed";
 
 export interface PhotoScore {
@@ -25,26 +27,6 @@ export type DeductionCode =
 
 export type ConfidenceGrade = "HIGH" | "MEDIUM" | "LOW";
 
-export interface PhotoEntry {
-  id: string;
-  file: File;
-  hash: bigint;
-  groupId: string;
-  score: PhotoScore | PetScore | null;
-  deductions: DeductionCode[];
-  confidence: ConfidenceGrade;
-  thumbnail: string;    // blob URL, 400px max
-  isSelected: boolean;
-  faceDetected: boolean;
-}
-
-export interface PhotoGroup {
-  id: string;
-  photoIds: string[];
-  selectedId: string | null;
-  confidence: ConfidenceGrade;
-}
-
 export interface AnalysisWeights {
   eyeOpen: number;
   sharpness: number;
@@ -66,9 +48,9 @@ export const DEFAULT_WEIGHTS: AnalysisWeights = {
 };
 
 export const DEFAULT_PET_WEIGHTS: PetWeights = {
-  sharpness: 0.55,    // 눈 감음 감지 부정확으로 선명도 중심으로 상향
-  eyeEstimate: 0.15,  // 밝기 추정 기반이라 신뢰도 낮음 → 하향
-  position: 0.30,     // 피사체 중앙 배치 중요도 상향
+  sharpness: 0.55,
+  eyeEstimate: 0.15,
+  position: 0.30,
 };
 
 export interface Filters {
@@ -85,7 +67,6 @@ export const DEFAULT_FILTERS: Filters = {
   excludeLowConf: false,
 };
 
-/** 씬 다양성 선별에 사용되는 그룹별 점수 항목 */
 export interface GroupScoreEntry {
   groupId: string;
   sceneId: string;
@@ -93,7 +74,134 @@ export interface GroupScoreEntry {
   score: number;
 }
 
-// ─── Flow B 타입 ───────────────────────────────────────────────────────────
+// ─── v3.0 신규 기본 타입 ──────────────────────────────────────────────────────
+
+export interface BBox {
+  x: number; y: number; w: number; h: number;  // 0~1 정규화
+}
+
+export interface Landmark {
+  x: number; y: number; z?: number;
+}
+
+// TECH_SPEC §2.5
+export type ExclusionReason =
+  | { kind: "eye_closed";          severity: "high" | "low" }
+  | { kind: "blurry";              severity: "high" | "low"; subkind: "motion" | "noise" | "out_of_focus" }
+  | { kind: "duplicate";           groupId: string; reason: "burst" | "scene" }
+  | { kind: "low_face_confidence" }
+  | { kind: "off_center";          reason: "subject_too_small" | "subject_cut_off" }
+  | { kind: "hero_absent";         mode: "AND" | "OR" }
+  | { kind: "user_excluded" };
+
+// TECH_SPEC §2.4 — 얼굴 분석 단위
+export interface FaceFeature {
+  bbox: BBox;
+  landmarks?: Landmark[];
+
+  // 핵심 측정값
+  earLeft: number;          // Eye Aspect Ratio 좌
+  earRight: number;         // Eye Aspect Ratio 우
+  marInner: number;         // Mouth Aspect Ratio
+  cheekRise: number;        // 뺨 융기 정도 (0~1)
+  mouthCornerAngle: number; // 입꼬리 각도 (도)
+  yaw: number;
+  pitch: number;
+  roll: number;
+
+  // 파생 신호 (§3)
+  isGenuineEyeClose: boolean;
+  isLaughingSquint: boolean;
+  isFacingCamera: boolean;
+  faceConfidence: number;   // 0~1
+
+  // v3.0 신규 — 인물 클러스터링 / 응시 (§3.7~3.8)
+  embedding?: Float32Array;          // 128~512 dim, L2 정규화
+  personId?: string;                 // PersonCluster.id
+  irisOffset?: { x: number; y: number };
+  isLookingAtCamera?: boolean;
+  gazeConfidence?: number;
+}
+
+// TECH_SPEC §2.4-bis — 인물 클러스터
+export interface PersonCluster {
+  id: string;                          // "p1", "p2", ...
+  displayName?: string;                // 사용자 입력 이름
+  centroid: Float32Array;              // 클러스터 중심 임베딩
+  faceCount: number;
+  photoIds: string[];
+  representativePhotoId: string;
+  representativeFaceBbox: BBox;
+  isHero: boolean;
+  heroSelectionOrder?: number;
+  estimatedAge?: "infant" | "child" | "adult" | "unknown";
+}
+
+export type HeroMode = "OR" | "AND";
+
+export interface HeroConfig {
+  selectedPersonIds: string[];
+  mode: HeroMode;
+  guaranteeNonHeroCount: number;       // 주인공 미등장 컷 보장 장수 (폴더당, 기본 5)
+}
+
+// TECH_SPEC §2.6 — 분석 단계
+export type AnalysisStage =
+  | "idle"
+  | "thumbnailing"
+  | "phashing"
+  | "burst_grouping"
+  | "scene_clustering"
+  | "face_detecting"
+  | "person_clustering"
+  | "awaiting_hero_pick"
+  | "scoring"
+  | "selecting"
+  | "done";
+
+export interface StorySnapshot {
+  stage: AnalysisStage;
+  message: string;
+  count: number;
+  timestamp: number;
+}
+
+// TECH_SPEC §2.8 — 결제
+export interface PaymentSession {
+  id: string;
+  email: string;
+  productCode: "single" | "package";
+  amount: number;                      // KRW (4900 | 15000)
+  status: "pending" | "paid" | "failed" | "refunded";
+  pgProvider: "kakaopay" | "tosspay" | "card";
+  pgGateway: "portone";
+  pgMode: "sandbox" | "live";
+  pgTransactionId?: string;
+  createdAt: number;
+  paidAt?: number;
+  expiresAt: number;                   // single: +24h / package: +90d
+  downloadQuota: number;               // single: 1 / package: Infinity
+  downloadCount: number;
+  reextractionCount: number;
+  appliedToSessionIds: string[];
+  adFreeEnabled: boolean;
+}
+
+export interface ClientPaymentState {
+  isPaid: boolean;
+  paymentSessionId?: string;
+  receiptEmail?: string;
+  receiptUrl?: string;
+}
+
+export interface AdImpression {
+  slotId: string;
+  shownAt: number;
+  screen: string;
+}
+
+// ─── Flow B 타입 (기존 계승 + v3 확장) ────────────────────────────────────────
+
 export type EventTag =
   | "maternity"
   | "newborn"
@@ -106,34 +214,107 @@ export type EventTag =
   | "travel"
   | "other";
 
+export interface PhotoEntry {
+  // ── 기존 v0.2.x 필드 (변경 금지) ──
+  id: string;
+  file: File;
+  hash: bigint;
+  groupId: string;
+  score: PhotoScore | PetScore | null;
+  deductions: DeductionCode[];
+  confidence: ConfidenceGrade;
+  thumbnail: string;           // blob URL, 400px max
+  isSelected: boolean;
+  faceDetected: boolean;
+
+  // ── v3.0 신규 — 얼굴 / 인물 분석 ──
+  faces?: FaceFeature[];
+  presentPersonIds?: string[];
+  primaryPersonId?: string;
+  heroMatchKind?: "all" | "any" | "none" | "non_hero_guaranteed";
+  heroBonus?: number;
+  exclusionReasons?: ExclusionReason[];
+  userOverride?: "none" | "force_in" | "force_out";
+  finalScore?: number;
+
+  // ── v3.0 신규 — 화질 분석 ──
+  phash?: string;
+  sceneId?: string;
+  globalSharpness?: number;
+  faceSharpness?: number;
+  noiseScore?: number;
+  outfitSig?: string;
+  shotAt?: number;
+  cameraId?: string;
+
+  // ── v3.0 신규 — 파일명 가림 (F19, §7.6) ──
+  // UI에는 displayName만 표시. file.name(원본)은 ZIP 결제 시에만 사용.
+  displayName?: string;        // 예: "DDP-만삭-001"
+
+  // ── v3.0 신규 — Google Drive 출처 (§16.3, source가 google_drive일 때만) ──
+  driveFileId?: string;
+  driveThumbnailUrl?: string;
+  driveOriginalUrl?: string;
+  isOriginalDownloaded?: boolean;
+  originalBlob?: Blob;
+}
+
+export interface PhotoGroup {
+  id: string;
+  photoIds: string[];
+  selectedId: string | null;
+  confidence: ConfidenceGrade;
+}
+
 export interface FolderSession {
+  // ── 기존 v0.2.x 필드 (변경 금지) ──
   id: string;
   folderName: string;
   eventTag: EventTag;
   files: File[];
   status: "pending" | "analyzing" | "done" | "error";
-  progress: number;     // 0~1
-  stage: string;        // 분석 단계 텍스트
+  progress: number;            // 0~1
+  stage: string;
   photos: Map<string, PhotoEntry>;
   groups: PhotoGroup[];
   targetCount: number;
   errorMessage?: string;
+
+  // ── v3.0 신규 ──
+  source: "local" | "google_drive";   // Drive 연동 여부 (§16.3)
+  driveFolderId?: string;
+  driveFolderPath?: string;            // 사용자에게 표시할 경로
+  recommendedCount?: number;
+  outfitChangePoints?: string[];
+  storyTelling?: StorySnapshot[];
 }
 
-// ─── AppState ──────────────────────────────────────────────────────────────
+// ─── AppState ──────────────────────────────────────────────────────────────────
+
+// TECH_SPEC §2.9 — v3.0에 신규 step 추가
+export type AppStep =
+  | "landing"
+  | "typeSelect"
+  | "upload"
+  | "analysis"
+  | "gallery"
+  | "album"
+  | "studioSelect"
+  | "folderUpload"
+  | "folderGallery"
+  | "personSelect"       // v3.0 신규 — 인물 선택 화면
+  | "paywall"            // v3.0 신규
+  | "paymentResult";     // v3.0 신규
+
 export interface AppState {
-  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album"
-      | "studioSelect" | "folderUpload" | "folderGallery";
-  // flow:
-  //   A = 사진만 셀렉 (개인용)
-  //   B = 스튜디오 폴더 셀렉 + 앨범 배치 (셀렉용 폴더 있음)
-  //   C = 스튜디오 폴더 셀렉 + ZIP만 (폴더 없음)
+  // ── 기존 v0.2.x 필드 (변경 금지) ──
+  step: AppStep;
   flow: "A" | "B" | "C" | null;
   photoType: PhotoType | null;
   photos: Map<string, PhotoEntry>;
   groups: PhotoGroup[];
   targetCount: number;
-  maxPerGroup: number;          // 유사 구도/포즈 최대 허용 장수 (default 2)
+  maxPerGroup: number;
   weights: AnalysisWeights;
   petWeights: PetWeights;
   filters: Filters;
@@ -141,19 +322,23 @@ export interface AppState {
   analysisProgress: number;
   analysisStage: string;
   locale: "ko" | "en";
-
-  // 취향 재추출 시스템
-  groupScoresWithScene: GroupScoreEntry[];  // 분석 결과 보존 (재추출에 재활용)
-  feedbackMode: boolean;                    // 피드백 수집 화면 표시 여부
-  feedbackSamples: string[];               // 평가 대상 photoId 목록 (씬별 샘플링)
-  feedbackEntries: Map<string, boolean>;   // photoId → true(좋아요) / false(싫어요)
-  preferenceWeights: AnalysisWeights | null;  // 피드백 반영 후 조정된 가중치
-  preferenceSelected: Set<string> | null;     // 취향 기반 재추출 결과 photoId 집합
-  bannerDismissed: boolean;               // 플로팅 배너 닫기 여부
-
-  // Flow B — 폴더 묶음 셀렉
+  groupScoresWithScene: GroupScoreEntry[];
+  feedbackMode: boolean;
+  feedbackSamples: string[];
+  feedbackEntries: Map<string, boolean>;
+  preferenceWeights: AnalysisWeights | null;
+  preferenceSelected: Set<string> | null;
+  bannerDismissed: boolean;
   folderSessions: FolderSession[];
+  filesDetached: boolean;
 
-  // 세션 지속성
-  filesDetached: boolean;                 // 새로고침 후 File 객체가 없는 상태
+  // ── v3.0 신규 — 결제 / 광고 ──
+  payment: ClientPaymentState;
+  watermarkEnabled: boolean;   // 무료=true / 유료=false
+  freeZipLimit: number;        // 기본 50장
+  adImpressions: AdImpression[];
+
+  // ── v3.0 신규 — 인물 클러스터링 ──
+  personClusters: Map<string, PersonCluster>;
+  heroConfig: HeroConfig;
 }

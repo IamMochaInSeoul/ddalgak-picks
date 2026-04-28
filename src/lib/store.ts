@@ -11,6 +11,7 @@ import type {
   GroupScoreEntry,
   FolderSession,
   EventTag,
+  PersonCluster,
 } from "./types";
 import {
   DEFAULT_WEIGHTS,
@@ -60,6 +61,15 @@ interface AppActions {
   removeFolderSession: (id: string) => void;
   setFolderSessionEventTag: (id: string, tag: EventTag) => void;
   setFolderSessionTargetCount: (id: string, n: number) => void;
+
+  // v3.0 신규 — 인물 클러스터링
+  setPersonClusters: (clusters: Map<string, PersonCluster>) => void;
+  upsertPersonCluster: (cluster: PersonCluster) => void;
+  setHeroConfig: (config: import("./types").HeroConfig) => void;
+
+  // v3.0 신규 — 결제
+  setPayment: (state: import("./types").ClientPaymentState) => void;
+  setWatermarkEnabled: (v: boolean) => void;
 }
 
 const initialState: AppState = {
@@ -91,6 +101,16 @@ const initialState: AppState = {
 
   // 세션 지속성
   filesDetached: false,
+
+  // v3.0 신규 — 결제 / 광고
+  payment: { isPaid: false },
+  watermarkEnabled: true,
+  freeZipLimit: 50,
+  adImpressions: [],
+
+  // v3.0 신규 — 인물 클러스터링
+  personClusters: new Map(),
+  heroConfig: { selectedPersonIds: [], mode: "OR", guaranteeNonHeroCount: 5 },
 };
 
 export const useStore = create<AppState & AppActions>((set) => ({
@@ -240,6 +260,20 @@ export const useStore = create<AppState & AppActions>((set) => ({
         fs.id === id ? { ...fs, targetCount: n } : fs
       ),
     })),
+
+  // v3.0 신규 — 인물 클러스터링
+  setPersonClusters: (clusters) => set({ personClusters: clusters }),
+  upsertPersonCluster: (cluster) =>
+    set((s) => {
+      const next = new Map(s.personClusters);
+      next.set(cluster.id, cluster);
+      return { personClusters: next };
+    }),
+  setHeroConfig: (config) => set({ heroConfig: config }),
+
+  // v3.0 신규 — 결제
+  setPayment: (state) => set({ payment: state }),
+  setWatermarkEnabled: (v) => set({ watermarkEnabled: v }),
 
   // 파일 재첨부: 파일명 매칭으로 File 객체를 기존 PhotoEntry에 주입
   reattachFiles: (files) => {

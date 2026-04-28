@@ -61,6 +61,7 @@ function makeSession(folderName: string, files: File[], eventTag: EventTag, targ
     photos: new Map(),
     groups: [],
     targetCount,
+    source: "local",
   };
 }
 
