@@ -123,8 +123,12 @@ export interface FolderSession {
 // ─── AppState ──────────────────────────────────────────────────────────────
 export interface AppState {
   step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album"
-      | "folderUpload" | "folderGallery";
-  flow: "A" | "B" | "C" | null;     // 선택된 플로우
+      | "studioSelect" | "folderUpload" | "folderGallery";
+  // flow:
+  //   A = 사진만 셀렉 (개인용)
+  //   B = 스튜디오 폴더 셀렉 + 앨범 배치 (셀렉용 폴더 있음)
+  //   C = 스튜디오 폴더 셀렉 + ZIP만 (폴더 없음)
+  flow: "A" | "B" | "C" | null;
   photoType: PhotoType | null;
   photos: Map<string, PhotoEntry>;
   groups: PhotoGroup[];

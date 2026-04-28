@@ -9,6 +9,7 @@ import FeedbackMode from "./FeedbackMode";
 import AlbumContainer from "./AlbumContainer";
 import FolderUpload from "./FolderUpload";
 import FolderGallery from "./FolderGallery";
+import StudioTypeSelect from "./StudioTypeSelect";
 import ErrorBoundary from "./ErrorBoundary";
 import {
   saveSession,
@@ -169,8 +170,9 @@ export default function AppShell() {
         {step === "gallery"      && !feedbackMode && <Gallery />}
         {step === "gallery"      && feedbackMode  && <FeedbackMode />}
         {step === "album"        && <AlbumContainer />}
-        {step === "folderUpload" && <FolderUpload />}
-        {step === "folderGallery"&& <FolderGallery />}
+        {step === "studioSelect"  && <StudioTypeSelect />}
+        {step === "folderUpload"  && <FolderUpload />}
+        {step === "folderGallery" && <FolderGallery />}
       </ErrorBoundary>
     </div>
   );

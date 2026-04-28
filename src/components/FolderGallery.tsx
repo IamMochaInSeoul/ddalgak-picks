@@ -32,6 +32,7 @@ function stageLabel(stage: string): string {
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
 export default function FolderGallery() {
   const setStep = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
+  const flow            = useStore((s) => s.flow);
   const folderSessions  = useStore((s) => s.folderSessions);
   const updateSession   = useStore((s) => s.updateFolderSession);
   const maxPerGroup     = useStore((s) => s.maxPerGroup);
@@ -366,7 +367,7 @@ export default function FolderGallery() {
         )}
       </div>
 
-      {/* ── 하단 전체 요약 + ZIP 버튼 ── */}
+      {/* ── 하단 전체 요약 + 액션 버튼 ── */}
       {allDone && (
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
@@ -381,14 +382,29 @@ export default function FolderGallery() {
             {" · "}
             <strong style={{ color: "var(--accent2)" }}>총 {totalSelected}장</strong> 선별
           </div>
-          <button
-            className="btn-primary"
-            style={{ fontSize: 14, padding: "10px 24px", flexShrink: 0 }}
-            onClick={handleExport}
-            disabled={exporting || totalSelected === 0}
-          >
-            {exporting ? "ZIP 생성 중…" : exported ? "✓ 다운로드 완료!" : "⬇ 전체 ZIP 저장"}
-          </button>
+          <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+            {/* ZIP 다운로드 (항상 표시) */}
+            <button
+              className="btn-secondary"
+              style={{ fontSize: 13, padding: "9px 18px" }}
+              onClick={handleExport}
+              disabled={exporting || totalSelected === 0}
+            >
+              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료!" : "⬇ ZIP 저장"}
+            </button>
+
+            {/* 앨범 배치 (flow B — 셀렉용 폴더 있음 경로만) */}
+            {flow === "B" && (
+              <button
+                className="btn-primary"
+                style={{ fontSize: 14, padding: "10px 22px" }}
+                onClick={() => setStep("album")}
+                disabled={totalSelected === 0}
+              >
+                📖 앨범 배치하기 →
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
