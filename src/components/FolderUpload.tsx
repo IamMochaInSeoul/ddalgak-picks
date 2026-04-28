@@ -1,6 +1,15 @@
 /**
  * FolderUpload.tsx — Flow B
- * 여러 폴더를 한번에 드롭/선택 → 폴더별 FolderSession 생성 후 분석 시작
+ * 여러 폴더를 드롭/반복 선택 → 폴더별 FolderSession 생성 후 분석 시작
+ *
+ * 폴더 등록 경로:
+ *   A. 드래그앤드롭 → onDrop → processFolderEntries (여러 폴더 한번에)
+ *   B. 버튼 클릭 → webkitdirectory 피커 → onFolderInputChange (한 번에 폴더 1개, 반복 가능)
+ *
+ * 주의:
+ *   - webkitdirectory 피커는 한 번에 폴더 1개만 선택 가능 (브라우저 제약)
+ *   - <input>에 accept 속성을 쓰면 webkitdirectory와 충돌해 files가 비어버림 → 제거
+ *   - 같은 폴더 재선택 시 onChange가 발화하지 않는 Chrome 버그 → inputKey로 매번 remount
  */
 import { useCallback, useRef, useState } from "react";
 import { useStore } from "../lib/store";
@@ -12,6 +21,7 @@ import type { AppState } from "../lib/types";
 const IMAGE_EXT = /\.(jpe?g|png|heic|heif|webp|avif|tiff?|bmp|gif)$/i;
 
 // ── FileSystemEntry 유틸 ────────────────────────────────────────────────────
+
 async function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
   const all: FileSystemEntry[] = [];
   while (true) {
@@ -29,7 +39,7 @@ async function collectImageFiles(entry: FileSystemEntry): Promise<File[]> {
       try {
         const f = await new Promise<File>((res, rej) => (e as FileSystemFileEntry).file(res, rej));
         if (IMAGE_EXT.test(f.name)) files.push(f);
-      } catch { /* skip */ }
+      } catch { /* skip unreadable files */ }
     } else if (e.isDirectory) {
       const entries = await readAllEntries((e as FileSystemDirectoryEntry).createReader());
       await Promise.all(entries.map(recurse));
@@ -39,58 +49,65 @@ async function collectImageFiles(entry: FileSystemEntry): Promise<File[]> {
   return files;
 }
 
-// ── 컴포넌트 ──────────────────────────────────────────────────────────────
-export default function FolderUpload() {
-  const setStep = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
-  const folderSessions = useStore((s) => s.folderSessions);
-  const setFolderSessions = useStore((s) => s.setFolderSessions);
-  const addFolderSession = useStore((s) => s.addFolderSession);
-  const updateFolderSession = useStore((s) => s.updateFolderSession);
-  const removeFolderSession = useStore((s) => s.removeFolderSession);
-  const setFolderSessionEventTag = useStore((s) => s.setFolderSessionEventTag);
-  const setFolderSessionTargetCount = useStore((s) => s.setFolderSessionTargetCount);
-  const globalTargetCount = useStore((s) => s.targetCount);
-  const maxPerGroup = useStore((s) => s.maxPerGroup);
-  const setMaxPerGroup = useStore((s) => s.setMaxPerGroup);
+function makeSession(folderName: string, files: File[], eventTag: EventTag, targetCount: number): FolderSession {
+  return {
+    id: `fs-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    folderName,
+    eventTag,
+    files,
+    status: "pending",
+    progress: 0,
+    stage: "",
+    photos: new Map(),
+    groups: [],
+    targetCount,
+  };
+}
 
-  const [dragging, setDragging] = useState(false);
-  const [loading, setLoading] = useState(false);
+// ── 컴포넌트 ──────────────────────────────────────────────────────────────
+
+export default function FolderUpload() {
+  const setStep             = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
+  const folderSessions      = useStore((s) => s.folderSessions);
+  const setFolderSessions   = useStore((s) => s.setFolderSessions);
+  const addFolderSession    = useStore((s) => s.addFolderSession);
+  const removeFolderSession = useStore((s) => s.removeFolderSession);
+  const setFolderSessionEventTag    = useStore((s) => s.setFolderSessionEventTag);
+  const setFolderSessionTargetCount = useStore((s) => s.setFolderSessionTargetCount);
+  const globalTargetCount   = useStore((s) => s.targetCount);
+  const maxPerGroup         = useStore((s) => s.maxPerGroup);
+  const setMaxPerGroup      = useStore((s) => s.setMaxPerGroup);
+
+  const [dragging, setDragging]   = useState(false);
+  const [loading, setLoading]     = useState(false);
   const [editingTag, setEditingTag] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg]   = useState<string | null>(null);
+  // inputKey: 선택 완료 때마다 증가 → <input>을 remount → 같은 폴더 재선택도 onChange 발화
+  const [inputKey, setInputKey]   = useState(0);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // ── 폴더 처리 ────────────────────────────────────────────────────────────
+  // ── 드래그앤드롭 경로 ───────────────────────────────────────────────────
+
   const processFolderEntries = useCallback(async (entries: FileSystemEntry[]) => {
     setLoading(true);
     setErrorMsg(null);
-    let addedCount = 0;
-    try {
-      const dirEntries = entries.filter((e) => e.isDirectory);
-      const fileEntries = entries.filter((e) => e.isFile);
 
+    const dirEntries  = entries.filter((e) => e.isDirectory);
+    const fileEntries = entries.filter((e) => e.isFile);
+    let addedCount = 0;
+
+    try {
       if (dirEntries.length > 0) {
         for (const entry of dirEntries) {
           let files: File[] = [];
           try {
             files = await collectImageFiles(entry);
           } catch {
-            continue;
+            continue; // 읽기 실패한 폴더는 건너뜀
           }
           if (files.length === 0) continue;
-          const session: FolderSession = {
-            id: `fs-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            folderName: entry.name,
-            eventTag: inferEventTag(entry.name),
-            files,
-            status: "pending",
-            progress: 0,
-            stage: "",
-            photos: new Map(),
-            groups: [],
-            targetCount: globalTargetCount,
-          };
-          addFolderSession(session);
+          addFolderSession(makeSession(entry.name, files, inferEventTag(entry.name), globalTargetCount));
           addedCount++;
         }
         if (addedCount === 0) {
@@ -105,19 +122,7 @@ export default function FolderUpload() {
           } catch { /* skip */ }
         }
         if (files.length > 0) {
-          const session: FolderSession = {
-            id: `fs-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            folderName: "드롭된 사진",
-            eventTag: "other",
-            files,
-            status: "pending",
-            progress: 0,
-            stage: "",
-            photos: new Map(),
-            groups: [],
-            targetCount: globalTargetCount,
-          };
-          addFolderSession(session);
+          addFolderSession(makeSession("드롭된 사진", files, "other", globalTargetCount));
         } else {
           setErrorMsg("드롭한 파일 중 이미지가 없어요. JPG/PNG/HEIC 파일을 드롭해주세요.");
         }
@@ -127,32 +132,34 @@ export default function FolderUpload() {
     }
   }, [addFolderSession, globalTargetCount]);
 
-  // ── 드래그앤드롭 ─────────────────────────────────────────────────────────
   const onDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const items = Array.from(e.dataTransfer.items);
-    if (items.length === 0) return;
-    const entries = items
+    const entries = Array.from(e.dataTransfer.items)
       .map((item) => item.webkitGetAsEntry?.())
       .filter((entry): entry is FileSystemEntry => !!entry);
-    if (entries.length === 0) return;
-    await processFolderEntries(entries);
+    if (entries.length > 0) await processFolderEntries(entries);
   }, [processFolderEntries]);
 
-  // ── 폴더 input onChange ──────────────────────────────────────────────────
+  // ── 버튼 클릭 경로 ──────────────────────────────────────────────────────
+  // webkitdirectory 피커는 폴더 1개만 선택 가능. 여러 폴더 추가 = 버튼 반복 클릭.
+  // inputKey 증가로 <input>을 remount → 삭제 후 같은 폴더 재선택도 정상 작동.
+
   const onFolderInputChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputFiles = e.target.files;
+    // remount 예약: 이후 어떤 결과든 다음 클릭은 항상 새 input에서 시작
+    setInputKey((k) => k + 1);
+
     if (!inputFiles || inputFiles.length === 0) return;
     setErrorMsg(null);
+
     const arr = Array.from(inputFiles).filter((f) => IMAGE_EXT.test(f.name));
     if (arr.length === 0) {
       setErrorMsg("선택한 폴더에서 이미지를 찾지 못했어요. JPG/PNG/HEIC 파일이 있는 폴더인지 확인해주세요.");
-      e.target.value = "";
       return;
     }
 
-    // webkitRelativePath를 이용해 폴더별로 그룹핑
+    // webkitRelativePath = "폴더명/파일명" 구조로 폴더별 그룹핑
     const byFolder = new Map<string, File[]>();
     for (const f of arr) {
       const parts = f.webkitRelativePath.split("/");
@@ -162,24 +169,12 @@ export default function FolderUpload() {
     }
 
     for (const [folderName, files] of byFolder) {
-      const session: FolderSession = {
-        id: `fs-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        folderName,
-        eventTag: inferEventTag(folderName),
-        files,
-        status: "pending",
-        progress: 0,
-        stage: "",
-        photos: new Map(),
-        groups: [],
-        targetCount: globalTargetCount,
-      };
-      addFolderSession(session);
+      addFolderSession(makeSession(folderName, files, inferEventTag(folderName), globalTargetCount));
     }
-    e.target.value = "";
   }, [addFolderSession, globalTargetCount]);
 
-  // ── 분석 시작 ─────────────────────────────────────────────────────────────
+  // ── 분석 시작 ────────────────────────────────────────────────────────────
+
   const startAnalysis = () => {
     if (folderSessions.length === 0) return;
     setStep("folderGallery");
@@ -190,6 +185,7 @@ export default function FolderUpload() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "0 0 60px" }}>
+
       {/* ── 헤더 ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
@@ -207,6 +203,7 @@ export default function FolderUpload() {
       </div>
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 20px 0" }}>
+
         {/* ── 드롭존 ── */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -218,7 +215,7 @@ export default function FolderUpload() {
             borderRadius: 16, padding: "40px 24px", textAlign: "center",
             cursor: loading ? "wait" : "pointer",
             background: dragging ? "rgba(108,99,255,0.08)" : "var(--bg2)",
-            transition: "all 0.15s", marginBottom: 16,
+            transition: "all 0.15s", marginBottom: 12,
           }}
         >
           {loading ? (
@@ -229,17 +226,17 @@ export default function FolderUpload() {
           ) : (
             <>
               <div style={{ fontSize: 48, marginBottom: 14 }}>📂</div>
-              <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+              <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
                 폴더를 여러 개 한꺼번에 드롭하세요
               </p>
               <p style={{ fontSize: 13, color: "var(--text2)" }}>
-                각 폴더가 촬영 세션으로 구분됩니다 · 클릭해서 선택도 가능해요
+                드롭: 여러 폴더 동시에 · 버튼: 한 폴더씩 반복 추가
               </p>
             </>
           )}
         </div>
 
-        {/* 에러 메시지 */}
+        {/* ── 에러 메시지 ── */}
         {errorMsg && (
           <div style={{
             background: "rgba(255,80,80,0.12)", border: "1.5px solid rgba(255,80,80,0.4)",
@@ -250,16 +247,23 @@ export default function FolderUpload() {
           </div>
         )}
 
-        {/* 폴더 선택 버튼 */}
+        {/* ── 폴더 선택 버튼 ── */}
         <button
           className="btn-secondary"
           style={{ width: "100%", fontSize: 14, padding: "11px 0", marginBottom: 24 }}
           disabled={loading}
           onClick={() => folderInputRef.current?.click()}
         >
-          📁 폴더 선택하기
+          📁 폴더 선택하기 (한 폴더씩 반복 추가 가능)
         </button>
-        <input ref={folderInputRef} type="file" multiple
+
+        {/* key 변경으로 remount → 같은 폴더 재선택도 onChange 발화 보장 */}
+        {/* accept 속성 없음: webkitdirectory + accept 조합 시 브라우저가 files를 비워버림 */}
+        <input
+          key={inputKey}
+          ref={folderInputRef}
+          type="file"
+          multiple
           // @ts-ignore
           webkitdirectory=""
           style={{ display: "none" }}
@@ -296,7 +300,6 @@ export default function FolderUpload() {
             {folderSessions.map((session) => (
               <div key={session.id} className="card" style={{ marginBottom: 10, padding: "16px 18px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                  {/* 폴더명 */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       📁 {session.folderName}
@@ -306,11 +309,11 @@ export default function FolderUpload() {
                     </div>
                   </div>
 
-                  {/* 삭제 버튼 */}
                   <button
                     onClick={() => removeFolderSession(session.id)}
                     style={{ background: "none", border: "none", cursor: "pointer",
                       color: "var(--text2)", fontSize: 18, padding: "4px 6px", lineHeight: 1 }}
+                    aria-label="폴더 삭제"
                   >
                     ✕
                   </button>
@@ -323,10 +326,7 @@ export default function FolderUpload() {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {ALL_EVENT_TAGS.map((tag) => (
                         <button key={tag}
-                          onClick={() => {
-                            setFolderSessionEventTag(session.id, tag);
-                            setEditingTag(null);
-                          }}
+                          onClick={() => { setFolderSessionEventTag(session.id, tag); setEditingTag(null); }}
                           style={{
                             padding: "5px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
                             border: `1.5px solid ${session.eventTag === tag ? "var(--accent)" : "var(--border)"}`,
@@ -401,10 +401,13 @@ export default function FolderUpload() {
           disabled={!isReady}
           onClick={startAnalysis}
         >
-          {loading ? "폴더 읽는 중..." : folderSessions.length === 0
-            ? "폴더를 먼저 추가해주세요"
-            : `🚀 ${folderSessions.length}개 폴더 분석 시작 (총 ${totalPhotos.toLocaleString()}장)`}
+          {loading
+            ? "폴더 읽는 중..."
+            : folderSessions.length === 0
+              ? "폴더를 먼저 추가해주세요"
+              : `🚀 ${folderSessions.length}개 폴더 분석 시작 (총 ${totalPhotos.toLocaleString()}장)`}
         </button>
+
       </div>
     </div>
   );
