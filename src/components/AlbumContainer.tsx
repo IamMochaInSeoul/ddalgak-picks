@@ -6,8 +6,8 @@ import type { AlbumSlot, AlbumSource, AlbumPhoto } from "../lib/albumTypes";
 // ─────────────────────────────────────────────────────────────────────────────
 // 환경변수
 // ─────────────────────────────────────────────────────────────────────────────
-const GOOGLE_CLIENT_ID = (import.meta as unknown as { env: Record<string, string> }).env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_API_KEY   = (import.meta as unknown as { env: Record<string, string> }).env.VITE_GOOGLE_API_KEY;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_API_KEY   = import.meta.env.VITE_GOOGLE_API_KEY;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 유틸: 썸네일 생성
