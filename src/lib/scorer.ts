@@ -125,6 +125,30 @@ export function selectTopPhotos(
 }
 
 /**
+ * §3.5 — v3 final score (portrait mode).
+ * Returns 0~100; heroBonus is additive raw points.
+ */
+export function calcFinalScoreV3(params: {
+  eyeOpen: number;
+  smileBalance: number;
+  sharpness: number;
+  expression: number;
+  facing: number;
+  composition: number;
+  heroBonus?: number;
+}): number {
+  const base =
+    params.eyeOpen      * 0.30 +
+    params.smileBalance * 0.10 +
+    params.sharpness    * 0.25 +
+    params.expression   * 0.15 +
+    params.facing       * 0.10 +
+    params.composition  * 0.10;
+
+  return Math.min(100, base * 100 + (params.heroBonus ?? 0));
+}
+
+/**
  * 씬(Scene) 다양성을 보장하면서 상위 N장 선별.
  *
  * 1. 씬별 사진 수 비례로 목표 할당량(quota) 배분

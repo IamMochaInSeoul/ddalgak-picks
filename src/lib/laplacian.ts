@@ -55,3 +55,50 @@ export function laplacianVariance(
 export function sharpnessScore(variance: number, maxVar = 500): number {
   return Math.min(variance / maxVar, 1);
 }
+
+/**
+ * §3.2 — face-region sharpness using face bbox + 0.4× shoulder extension.
+ * bbox fields are normalized [0, 1].
+ */
+export function calculateFaceSharpness(
+  imageData: ImageData,
+  bbox: { x: number; y: number; w: number; h: number },
+  imgW: number,
+  imgH: number
+): { faceSharpness: number; globalSharpness: number; intentionalBokeh: boolean } {
+  const fx = Math.max(0, Math.round(bbox.x * imgW));
+  const fy = Math.max(0, Math.round(bbox.y * imgH));
+  const fw = Math.min(Math.round(bbox.w * imgW), imgW - fx);
+  const fh = Math.min(Math.round(bbox.h * imgH), imgH - fy);
+
+  const sy = fy + fh;
+  const sh = Math.min(Math.round(fh * 0.4), imgH - sy);
+
+  const faceVar    = fw > 0 && fh > 0 ? laplacianVariance(imageData, fx, fy, fw, fh) : 0;
+  const shoulderVar = fw > 0 && sh > 0 ? laplacianVariance(imageData, fx, sy, fw, sh) : 0;
+  const faceSharpness   = faceVar + 0.4 * shoulderVar;
+  const globalSharpness = laplacianVariance(imageData);
+
+  // Intentional bokeh: face is sharp but overall scene is blurry
+  const intentionalBokeh = faceSharpness >= 120 && globalSharpness < faceSharpness * 0.5;
+
+  return { faceSharpness, globalSharpness, intentionalBokeh };
+}
+
+/** High-frequency noise estimate, normalized to [0, 1] */
+export function estimateNoiseScore(imageData: ImageData): number {
+  return Math.max(0, Math.min(1, laplacianVariance(imageData) / 2000));
+}
+
+/** §3.2 — qualitative sharpness category */
+export function classifySharpness(
+  globalSharpness: number,
+  faceSharpness: number,
+  noiseScore: number,
+  hasFace: boolean
+): "sharp" | "soft" | "blurry" {
+  const ref = hasFace ? faceSharpness : globalSharpness;
+  if (ref >= 150 && noiseScore < 0.6) return "sharp";
+  if (ref >= 50) return "soft";
+  return "blurry";
+}
