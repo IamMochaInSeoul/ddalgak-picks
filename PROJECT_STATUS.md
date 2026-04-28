@@ -1,7 +1,7 @@
 # 딸깍픽스 (ddalgak-picks) — PROJECT STATUS
 
-> **마지막 업데이트:** 2026-04-27
-> **현재 버전:** v0.2.1 (빌드 완료 — 터미널에서 git commit + npx vercel --prod 필요)
+> **마지막 업데이트:** 2026-04-28
+> **현재 버전:** v0.3.0 — v3.0 베타 (PR 7~17 완료, 배포 완료)
 > **배포 URL:** https://ddalgak-picks.vercel.app
 > **GitHub:** https://github.com/IamMochaInSeoul/ddalgak-picks (main 브랜치)
 

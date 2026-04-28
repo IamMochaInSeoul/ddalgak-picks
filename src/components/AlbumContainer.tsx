@@ -2,6 +2,13 @@ import { useState, useRef, useCallback } from "react";
 import { useStore } from "../lib/store";
 import { laplacianVariance, sharpnessScore } from "../lib/laplacian";
 import type { AlbumSlot, AlbumSource, AlbumPhoto } from "../lib/albumTypes";
+import {
+  getGoogleAccessToken as getDriveToken,
+  openDrivePicker as drivePicker,
+  listDriveFolder,
+  downloadDriveFile,
+  type DriveFileItem,
+} from "../lib/googleDrive";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 환경변수
@@ -85,101 +92,7 @@ async function readDirEntryFiles(dir: FileSystemDirectoryEntry): Promise<File[]>
   return files;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 유틸: Google Drive 관련
-// ─────────────────────────────────────────────────────────────────────────────
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement("script");
-    s.src = src; s.async = true;
-    s.onload = () => resolve();
-    document.head.appendChild(s);
-  });
-}
-
-async function getGoogleAccessToken(clientId: string): Promise<string> {
-  await loadScript("https://accounts.google.com/gsi/client");
-  return new Promise((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g = (window as any).google;
-    const tokenClient = g.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: "https://www.googleapis.com/auth/drive.readonly",
-      callback: (response: { error?: string; access_token: string }) => {
-        if (response.error) { reject(new Error(response.error)); return; }
-        resolve(response.access_token);
-      },
-    });
-    tokenClient.requestAccessToken({ prompt: "" });
-  });
-}
-
-interface DriveFileItem { id: string; name: string; mimeType: string }
-
-async function openDrivePicker(token: string, apiKey: string): Promise<{ type: "folder" | "files"; id?: string; name?: string; items?: DriveFileItem[] }> {
-  await loadScript("https://apis.google.com/js/api.js");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const w = window as any;
-  return new Promise((resolve, reject) => {
-    w.gapi.load("picker", () => {
-      const g = w.google;
-      const imageMimes = "image/jpeg,image/png,image/heic,image/webp,image/avif,image/tiff";
-      const picker = new g.picker.PickerBuilder()
-        .addView(
-          new g.picker.DocsView(g.picker.ViewId.FOLDERS)
-            .setIncludeFolders(true)
-            .setSelectFolderEnabled(true)
-            .setMimeTypes("application/vnd.google-apps.folder")
-        )
-        .addView(
-          new g.picker.DocsView()
-            .setMimeTypes(imageMimes)
-            .setMode(g.picker.DocsViewMode.GRID)
-        )
-        .setOAuthToken(token)
-        .setDeveloperKey(apiKey)
-        .enableFeature(g.picker.Feature.MULTISELECT_ENABLED)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .setCallback((data: any) => {
-          if (data.action === g.picker.Action.PICKED) {
-            const docs = data.docs as DriveFileItem[];
-            if (docs[0]?.mimeType === "application/vnd.google-apps.folder") {
-              resolve({ type: "folder", id: docs[0].id, name: docs[0].name });
-            } else {
-              resolve({ type: "files", items: docs });
-            }
-          } else if (data.action === g.picker.Action.CANCEL) {
-            reject(new Error("cancelled"));
-          }
-        })
-        .build();
-      picker.setVisible(true);
-    });
-  });
-}
-
-async function listDriveFolder(folderId: string, token: string): Promise<DriveFileItem[]> {
-  const imageMimes = ["image/jpeg","image/png","image/heic","image/webp","image/avif","image/tiff"];
-  const mimeQ = imageMimes.map((m) => `mimeType='${m}'`).join(" or ");
-  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and (${mimeQ})`);
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType)&pageSize=500`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  const data = await res.json();
-  return data.files ?? [];
-}
-
-async function downloadDriveFile(item: DriveFileItem, token: string): Promise<File> {
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${item.id}?alt=media`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  if (!res.ok) throw new Error(`Failed to download ${item.name}`);
-  const blob = await res.blob();
-  return new File([blob], item.name, { type: item.mimeType });
-}
+// Drive 유틸은 src/lib/googleDrive.ts 공용 모듈로 이동됨
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 스튜디오 템플릿 폴더 파싱
@@ -447,13 +360,13 @@ export default function AlbumContainer() {
       // 1) 토큰 발급 (이미 있으면 재사용)
       let token = driveToken;
       if (!token) {
-        token = await getGoogleAccessToken(GOOGLE_CLIENT_ID);
+        token = await getDriveToken();
         setDriveToken(token);
       }
       // 2) Google Picker 열기
-      let picked: Awaited<ReturnType<typeof openDrivePicker>>;
+      let picked: Awaited<ReturnType<typeof drivePicker>>;
       try {
-        picked = await openDrivePicker(token, GOOGLE_API_KEY);
+        picked = await drivePicker(token);
       } catch {
         setDriveLoading(false);
         return; // 취소

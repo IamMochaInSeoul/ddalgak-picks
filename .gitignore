@@ -9,6 +9,7 @@ dist_new/
 # 환경 변수
 .env
 .env.*
+!.env.example
 
 # Vercel
 .vercel
