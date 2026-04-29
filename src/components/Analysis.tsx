@@ -1,42 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { analyzePhotos, serializeError } from "../lib/analyzer";
+import MonoNumber from "./MonoNumber";
 
-// ── 단계별 스토리텔링 메시지 ────────────────────────────────────────────
+// ── 단계별 스토리텔링 메시지 (큐레이터 톤 — 이모지·느낌표 없음) ──────────
 const STAGE_STORIES: Record<string, string[]> = {
   loadingModel: [
-    "AI가 눈을 뜨고 있어요 👁",
-    "머신러닝 모델을 깨우는 중이에요",
-    "잠깐만요, 준비 중이에요 ✨",
+    "모델을 준비하고 있습니다",
+    "잠시만 기다려주세요",
   ],
   grouping: [
-    "비슷한 순간들을 찾아내고 있어요",
-    "연속 컷을 묶어보는 중이에요 📸",
-    "같은 장면끼리 모아보는 중이에요",
+    "유사한 컷을 그룹화하는 중입니다",
+    "연속 촬영을 묶는 중입니다",
+    "같은 장면끼리 정리하는 중입니다",
   ],
   scoring: [
-    "한 장 한 장 꼼꼼히 보고 있어요",
-    "눈을 잘 떴는지 확인 중이에요 👀",
-    "표정이 자연스러운지 보고 있어요",
-    "초점이 맞는지 살펴보는 중이에요 🔍",
-    "가장 빛나는 순간을 찾고 있어요 ✨",
-    "흔들리지 않은 사진을 고르는 중이에요",
+    "각 컷을 채점하는 중입니다",
+    "눈 감은 컷을 확인하는 중입니다",
+    "표정을 분석하는 중입니다",
+    "선명도를 측정하는 중입니다",
+    "흔들린 컷을 찾는 중입니다",
+    "정면도를 확인하는 중입니다",
   ],
   selecting: [
-    "최고의 사진들을 추리고 있어요",
-    "당신의 베스트컷을 정하는 중이에요 🏆",
-    "거의 다 됐어요!",
+    "베스트 컷을 선별하는 중입니다",
+    "이벤트별로 분배하는 중입니다",
+    "마무리 중입니다",
   ],
-  done: ["완성됐어요! 🎉"],
+  done: ["완료."],
 };
 
 const TIPS = [
-  "💡 이 화면을 벗어나거나 탭을 전환하면 분석 속도가 크게 느려져요.",
-  "📸 사진이 많을수록 더 정확하게 골라드려요.",
-  "👥 인물이 많은 사진도 표정을 개별로 확인해요.",
-  "🔍 초점, 흔들림, 눈 뜸 여부를 모두 체크하고 있어요.",
-  "☕ 잠깐 커피 한 모금 하고 오세요 — 이 창만 열어두면 돼요!",
-  "🏆 점수가 비슷하면 구도가 더 좋은 사진을 선택해요.",
+  "이 화면을 벗어나거나 탭을 전환하면 분석 속도가 느려집니다.",
+  "사진이 많을수록 더 정확하게 선별됩니다.",
+  "인물이 많은 사진도 표정을 개별로 확인합니다.",
+  "초점, 흔들림, 눈 뜸 여부를 모두 확인하고 있습니다.",
+  "이 창만 열어두면 됩니다. 잠시 다른 일을 해도 괜찮습니다.",
+  "점수가 비슷하면 구도가 더 좋은 사진을 선택합니다.",
 ];
 
 function useRotatingText(texts: string[], intervalMs = 3000) {
@@ -148,15 +148,16 @@ export default function Analysis() {
       alignItems: "center", justifyContent: "center", padding: "24px", background: "var(--bg)" }}>
       <div style={{ textAlign: "center", maxWidth: 480, width: "100%" }}>
 
-        {/* 아이콘 */}
+        {/* 진행 인디케이터 — 이모지 대신 단정한 타이포 마크 */}
         <div style={{
-          width: 88, height: 88, borderRadius: "50%",
-          background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+          width: 88, height: 88,
+          border: "1px solid var(--border-strong)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 40, margin: "0 auto 28px",
-          animation: "pulse 2s infinite",
-          boxShadow: "0 0 32px rgba(139,92,246,0.35)",
-        }}>🤖</div>
+          fontSize: 13, letterSpacing: "var(--tracking-uppercase)",
+          color: "var(--accent)", fontFamily: "var(--font-mono)",
+          margin: "0 auto 28px",
+          animation: "pulse 2.4s infinite",
+        }}>ANALYZING</div>
 
         {/* 스토리 메시지 */}
         <div style={{ height: 36, marginBottom: 6, overflow: "hidden" }}>
@@ -170,8 +171,8 @@ export default function Analysis() {
 
         {/* 사진 카운터 */}
         {total > 0 && stage === "scoring" && (
-          <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20 }}>
-            {current} / {total}장 분석 중
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20 }}>
+            <MonoNumber value={current} /> / <MonoNumber value={total} />
           </p>
         )}
         {(total === 0 || stage !== "scoring") && (
@@ -192,8 +193,8 @@ export default function Analysis() {
             boxShadow: "0 0 8px rgba(139,92,246,0.5)",
           }} />
         </div>
-        <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 32, fontVariantNumeric: "tabular-nums" }}>
-          {pct}%
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 32 }}>
+          <MonoNumber value={pct} suffix="%" format={false} />
         </p>
 
         {/* 팁 카드 */}

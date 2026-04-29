@@ -874,11 +874,11 @@ export default function AlbumContainer() {
         <div style={{ flex: 1 }} />
         <button className="btn-secondary" style={{ fontSize: 13, padding: "7px 16px", opacity: autoAssigning ? 0.6 : 1 }}
           disabled={autoAssigning || sources.length === 0} onClick={handleAutoAssign}>
-          {autoAssigning ? "⏳ 배치 중..." : "✨ AI 자동 배치"}
+          {autoAssigning ? "배치 중..." : "AI 자동 배치"}
         </button>
         <button className="btn-primary" style={{ fontSize: 13, padding: "7px 20px", opacity: downloading ? 0.6 : 1 }}
           disabled={downloading || totalAssigned === 0} onClick={handleDownload}>
-          {downloading ? "ZIP 생성 중..." : `⬇ ZIP 다운로드 (${totalAssigned}장)`}
+          {downloading ? "ZIP 생성 중..." : `ZIP 다운로드 (${totalAssigned}장)`}
         </button>
       </div>
 
@@ -963,7 +963,7 @@ export default function AlbumContainer() {
             ))}
             <div style={{ marginLeft: "auto", fontSize: 12, color: "var(--text2)" }}>
               {activeSlotId
-                ? `📌 "${slots.find(s => s.id === activeSlotId)?.slotName}" 선택됨 — 사진 클릭 시 배치`
+                ? `"${slots.find(s => s.id === activeSlotId)?.slotName}" 선택됨 — 사진 클릭 시 배치`
                 : "← 왼쪽 슬롯을 클릭해 선택하세요"}
             </div>
           </div>

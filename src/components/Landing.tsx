@@ -2,6 +2,7 @@
 import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
+import Display from "./Display";
 import type { AppState } from "../lib/types";
 
 // ─── 2-카드 정의 ─────────────────────────────────────────────────────────────
@@ -74,17 +75,18 @@ export default function Landing() {
           ✦ AI Photo Selector · Beta
         </div>
 
-        <h1 style={{
-          fontSize: "clamp(30px, 5.5vw, 52px)",
-          fontWeight: 900, lineHeight: 1.12, letterSpacing: "-0.04em",
-          marginBottom: 18,
-          background: "linear-gradient(145deg, #eeeeff 30%, #a89cff 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}>
+        <Display
+          as="h1"
+          size="xl"
+          style={{
+            fontSize: "clamp(26px, 4.5vw, 48px)",
+            marginBottom: 16,
+            color: "var(--text-primary)",
+          }}
+        >
           {t("headline")}
-        </h1>
-        <p style={{ fontSize: 16, color: "var(--text2)", lineHeight: 1.75 }}>
+        </Display>
+        <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.75 }}>
           {t("subheadline")}
         </p>
       </div>
@@ -178,24 +180,23 @@ export default function Landing() {
         maxWidth: 700, padding: "48px 20px 0",
       }}>
         {[
-          { num: "01", icon: "📁", title: t("step1"), desc: t("step1desc") },
-          { num: "02", icon: "🤖", title: t("step2"), desc: t("step2desc") },
-          { num: "03", icon: "✨", title: t("step3"), desc: t("step3desc") },
+          { num: "01", title: t("step1"), desc: t("step1desc") },
+          { num: "02", title: t("step2"), desc: t("step2desc") },
+          { num: "03", title: t("step3"), desc: t("step3desc") },
         ].map((s) => (
           <div key={s.num} style={{
             flex: "1 1 180px", textAlign: "center", padding: "20px 16px",
             background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 14,
           }}>
-            <div style={{ fontSize: 26, marginBottom: 8 }}>{s.icon}</div>
-            <div style={{ fontSize: 10, color: "var(--accent2)", fontWeight: 700, marginBottom: 4, letterSpacing: "0.06em" }}>{s.num}</div>
+            <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--accent)", marginBottom: 8, letterSpacing: "var(--tracking-uppercase)" }}>{s.num}</div>
             <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 5 }}>{s.title}</div>
             <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>{s.desc}</div>
           </div>
         ))}
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--text2)", textAlign: "center", opacity: 0.45, padding: "36px 20px 40px" }}>
-        모든 분석은 브라우저에서만 처리됩니다. 사진이 서버로 전송되지 않아요.
+      <p style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", padding: "36px 20px 40px", letterSpacing: "0.02em" }}>
+        모든 분석은 브라우저에서만 처리됩니다. 사진이 서버로 전송되지 않습니다.
       </p>
     </div>
   );

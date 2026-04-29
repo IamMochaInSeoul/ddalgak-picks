@@ -1,25 +1,48 @@
+/**
+ * globals.css — 컴포넌트 클래스 + 레거시 변수 별칭
+ *
+ * 레거시 변수(--bg, --text, --accent …)는 tokens.css의 새 토큰으로 매핑된다.
+ * 기존 컴포넌트는 수정 없이 계속 동작하되, 색상이 큐레이터 팔레트로 전환된다.
+ * Stage B에서 컴포넌트들이 --bg-base 등 canonical 토큰을 직접 참조하면
+ * 이 별칭 블록은 제거할 수 있다.
+ *
+ * [Stage A 인지된 이슈 — Stage B 후속 작업 필요]
+ * - .btn-primary, .photo-card.selected, .badge-high 등은 --accent(금색)을 사용.
+ *   기존 보라색 인상이 금색으로 바뀐다. 이는 의도된 톤 전환이며,
+ *   Stage B에서 버튼·배지 클래스 전체를 재설계한다.
+ * - Landing.tsx 카드의 accentRgb 값(108,99,255)은 보라색 hard-coded.
+ *   Stage B에서 골드 RGB(201,169,97)로 교체 예정.
+ */
 
 :root {
-  --bg: #0f0f13;
-  --bg2: #1a1a24;
-  --bg3: #24243a;
-  --accent: #6c63ff;
-  --accent2: #a89cff;
-  --text: #f0f0f8;
-  --text2: #9090b0;
-  --border: #2e2e4a;
+  /* ── 레거시 별칭 → 새 토큰 매핑 ─────────────────────────────────────── */
+  --bg:         var(--bg-base);
+  --bg2:        var(--bg-elevated);
+  --bg3:        var(--bg-overlay);
+  --text:       var(--text-primary);
+  --text2:      var(--text-secondary);
+  --border:     var(--border-subtle);
+
+  /* 액센트: 보라에서 금색으로 전환 (의도된 큐레이터 톤 변경) */
+  --accent:     var(--accent);        /* #C9A961 */
+  --accent2:    var(--accent-dim);    /* #D4BC82 */
+
+  /* 상태 컬러는 기존 유지 (갤러리 배지 등에서 사용) */
   --high: #22c55e;
-  --med: #f59e0b;
-  --low: #ef4444;
-  --background: #0f0f13;
-  --foreground: #f0f0f8;
+  --med:  var(--warning);
+  --low:  var(--critical);
+
+  /* 하위 호환 */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
 }
 
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+html, body {
+  background:   var(--bg-base);
+  color:        var(--text-primary);
+  font-family:  var(--font-sans);
+  font-size:    var(--text-base);
+  line-height:  var(--leading-base);
 }
 
 .card {
@@ -31,29 +54,30 @@ body {
 
 .btn-primary {
   background: var(--accent);
-  color: white;
+  color: #0E0D0B;   /* 골드 위 어두운 텍스트 (가독성) */
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 24px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
-.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-secondary {
   background: transparent;
-  color: var(--text2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+              color       var(--dur-fast) var(--ease-standard);
 }
-.btn-secondary:hover { border-color: var(--accent2); color: var(--text); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--text-primary); }
 
 .badge {
   display: inline-block;
@@ -85,13 +109,13 @@ body {
 
 .photo-card {
   position: relative;
-  border-radius: 8px;
+  border-radius: var(--radius-photo);   /* 0 — 사진은 직각 */
   overflow: hidden;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color 0.15s, transform 0.1s;
+  border: 1px solid transparent;
+  transition: border-color var(--dur-fast) var(--ease-standard);
 }
-.photo-card:hover { transform: translateY(-2px); }
+.photo-card:hover { border-color: var(--border-strong); }
 .photo-card.selected { border-color: var(--accent); }
 
 ::-webkit-scrollbar { width: 6px; }
