@@ -10,6 +10,7 @@ import type {
   Filters,
   GroupScoreEntry,
   FolderSession,
+  DriveQueueItem,
   EventTag,
   PersonCluster,
   HeroConfig,
@@ -64,6 +65,11 @@ interface AppActions {
   setFolderSessionEventTag: (id: string, tag: EventTag) => void;
   setFolderSessionTargetCount: (id: string, n: number) => void;
 
+  // Drive 다운로드 큐 (전역 — 화면 전환 후에도 유지)
+  addDriveQueueItem: (item: DriveQueueItem) => void;
+  updateDriveQueueItem: (id: string, patch: Partial<DriveQueueItem>) => void;
+  removeDriveQueueItem: (id: string) => void;
+
   // v3.0 신규 — 인물 클러스터링
   setPersonClusters: (clusters: Map<string, PersonCluster>) => void;
   upsertPersonCluster: (cluster: PersonCluster) => void;
@@ -103,6 +109,7 @@ const initialState: AppState = {
 
   // Flow B
   folderSessions: [],
+  driveQueue: [],
 
   // 세션 지속성
   filesDetached: false,
@@ -265,6 +272,16 @@ export const useStore = create<AppState & AppActions>((set) => ({
         fs.id === id ? { ...fs, targetCount: n } : fs
       ),
     })),
+
+  // Drive 다운로드 큐 액션
+  addDriveQueueItem: (item) =>
+    set((s) => ({ driveQueue: [...s.driveQueue, item] })),
+  updateDriveQueueItem: (id, patch) =>
+    set((s) => ({
+      driveQueue: s.driveQueue.map((e) => e.id === id ? { ...e, ...patch } : e),
+    })),
+  removeDriveQueueItem: (id) =>
+    set((s) => ({ driveQueue: s.driveQueue.filter((e) => e.id !== id) })),
 
   // v3.0 신규 — 인물 클러스터링
   setPersonClusters: (clusters) => set({ personClusters: clusters }),

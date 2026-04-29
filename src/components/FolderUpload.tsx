@@ -86,22 +86,16 @@ export default function FolderUpload() {
   const globalTargetCount   = useStore((s) => s.targetCount);
   const maxPerGroup         = useStore((s) => s.maxPerGroup);
   const setMaxPerGroup      = useStore((s) => s.setMaxPerGroup);
+  const driveQueue          = useStore((s) => s.driveQueue);
+  const addDriveQueueItem   = useStore((s) => s.addDriveQueueItem);
+  const updateDriveQueueItem = useStore((s) => s.updateDriveQueueItem);
+  const removeDriveQueueItem = useStore((s) => s.removeDriveQueueItem);
 
   const [dragging, setDragging]   = useState(false);
   const [loading, setLoading]     = useState(false);
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [errorMsg, setErrorMsg]   = useState<string | null>(null);
   const [inputKey, setInputKey]   = useState(0);
-
-  // Drive 백그라운드 다운로드 큐
-  const [driveQueue, setDriveQueue] = useState<Array<{
-    id: string;
-    folderName: string;
-    status: "downloading" | "done" | "error";
-    current: number;
-    total: number;
-    errorMsg?: string;
-  }>>([]);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
 
@@ -192,10 +186,15 @@ export default function FolderUpload() {
   }, [addFolderSession, globalTargetCount]);
 
   // ── Google Drive 경로 (백그라운드 다운로드) ───────────────────────────────
-  // 피커로 폴더를 선택하는 즉시 driveQueue에 등록하고 백그라운드에서 다운로드 시작.
+  // 피커로 폴더를 선택하는 즉시 전역 driveQueue에 등록하고 백그라운드에서 다운로드 시작.
   // handleDriveImport 자체는 picker await까지만 블로킹 → 사용자는 바로 다시 클릭 가능.
+  // driveQueue는 Zustand 전역 스토어 → 다른 화면으로 이동해도 진행상황 유지.
   const handleDriveImport = useCallback(async () => {
     setErrorMsg(null);
+    // 브라우저 알림 권한 요청 (최초 1회)
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
     try {
       const token = await getGoogleAccessToken();
       const picked = await openDrivePicker(token);
@@ -203,35 +202,37 @@ export default function FolderUpload() {
       const qid = `drive-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
       if (picked.type === "folder") {
-        // 즉시 큐에 추가 (다운로드 시작 표시)
-        setDriveQueue((q) => [
-          ...q,
-          { id: qid, folderName: picked.name, status: "downloading", current: 0, total: 0 },
-        ]);
+        addDriveQueueItem({ id: qid, folderName: picked.name, status: "downloading", current: 0, total: 0 });
 
         // 백그라운드 다운로드 (await 없이 fire-and-forget)
         (async () => {
           try {
             const items = await listDriveFolder(picked.id, token);
             if (items.length === 0) {
-              setDriveQueue((q) => q.map((e) =>
-                e.id === qid ? { ...e, status: "error", errorMsg: "이미지를 찾지 못했어요" } : e));
+              updateDriveQueueItem(qid, { status: "error", errorMsg: "이미지를 찾지 못했어요" });
               return;
             }
-            setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, total: items.length } : e));
+            updateDriveQueueItem(qid, { total: items.length });
 
             const files: File[] = [];
             for (let i = 0; i < items.length; i++) {
               files.push(await downloadDriveFile(items[i], token));
-              setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, current: i + 1 } : e));
+              updateDriveQueueItem(qid, { current: i + 1 });
             }
             addFolderSession(makeSession(picked.name, files, inferEventTag(picked.name), globalTargetCount));
+            updateDriveQueueItem(qid, { status: "done" });
             showToast(`${picked.name} — ${files.length}장 가져왔어요!`, "✅");
-            setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, status: "done" } : e));
-            setTimeout(() => setDriveQueue((q) => q.filter((e) => e.id !== qid)), 3000);
+            // 브라우저 알림 (탭이 백그라운드에 있을 때 유용)
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("딸깍픽스 — 다운로드 완료 ✅", {
+                body: `${picked.name} · ${files.length}장 준비됐어요. 분석을 시작해보세요!`,
+                icon: "/favicon.ico",
+              });
+            }
+            setTimeout(() => removeDriveQueueItem(qid), 4000);
           } catch (err) {
             const msg = err instanceof Error ? err.message : "알 수 없는 오류";
-            setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, status: "error", errorMsg: msg } : e));
+            updateDriveQueueItem(qid, { status: "error", errorMsg: msg });
           }
         })();
 
@@ -239,25 +240,28 @@ export default function FolderUpload() {
         const items = picked.items ?? [];
         if (items.length === 0) { setErrorMsg("선택한 파일이 없어요."); return; }
 
-        setDriveQueue((q) => [
-          ...q,
-          { id: qid, folderName: "Drive 사진", status: "downloading", current: 0, total: items.length },
-        ]);
+        addDriveQueueItem({ id: qid, folderName: "Drive 사진", status: "downloading", current: 0, total: items.length });
 
         (async () => {
           try {
             const files: File[] = [];
             for (let i = 0; i < items.length; i++) {
               files.push(await downloadDriveFile(items[i], token));
-              setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, current: i + 1 } : e));
+              updateDriveQueueItem(qid, { current: i + 1 });
             }
             addFolderSession(makeSession("Drive 사진", files, "other", globalTargetCount));
+            updateDriveQueueItem(qid, { status: "done" });
             showToast(`${files.length}장 가져왔어요!`, "✅");
-            setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, status: "done" } : e));
-            setTimeout(() => setDriveQueue((q) => q.filter((e) => e.id !== qid)), 3000);
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("딸깍픽스 — 다운로드 완료 ✅", {
+                body: `Drive 사진 ${files.length}장 준비됐어요. 분석을 시작해보세요!`,
+                icon: "/favicon.ico",
+              });
+            }
+            setTimeout(() => removeDriveQueueItem(qid), 4000);
           } catch (err) {
             const msg = err instanceof Error ? err.message : "알 수 없는 오류";
-            setDriveQueue((q) => q.map((e) => e.id === qid ? { ...e, status: "error", errorMsg: msg } : e));
+            updateDriveQueueItem(qid, { status: "error", errorMsg: msg });
           }
         })();
       }
@@ -266,7 +270,7 @@ export default function FolderUpload() {
         setErrorMsg(`Drive 연동 오류: ${err.message}`);
       }
     }
-  }, [addFolderSession, globalTargetCount]);
+  }, [addFolderSession, globalTargetCount, addDriveQueueItem, updateDriveQueueItem, removeDriveQueueItem]);
 
   // ── 분석 시작 ────────────────────────────────────────────────────────────
 
@@ -416,7 +420,7 @@ export default function FolderUpload() {
                 )}
                 {item.status === "error" && (
                   <button
-                    onClick={() => setDriveQueue((q) => q.filter((e) => e.id !== item.id))}
+                    onClick={() => removeDriveQueueItem(item.id)}
                     style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 16, padding: "0 2px" }}
                   >✕</button>
                 )}

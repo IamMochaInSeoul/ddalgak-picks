@@ -289,6 +289,17 @@ export interface FolderSession {
   storyTelling?: StorySnapshot[];
 }
 
+// ─── Drive 다운로드 큐 ────────────────────────────────────────────────────────
+
+export interface DriveQueueItem {
+  id: string;
+  folderName: string;
+  status: "downloading" | "done" | "error";
+  current: number;
+  total: number;
+  errorMsg?: string;
+}
+
 // ─── AppState ──────────────────────────────────────────────────────────────────
 
 // TECH_SPEC §2.9 — v3.0에 신규 step 추가
@@ -330,6 +341,7 @@ export interface AppState {
   preferenceSelected: Set<string> | null;
   bannerDismissed: boolean;
   folderSessions: FolderSession[];
+  driveQueue: DriveQueueItem[];
   filesDetached: boolean;
 
   // ── v3.0 신규 — 결제 / 광고 ──

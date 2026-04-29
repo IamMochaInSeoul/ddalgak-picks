@@ -13,6 +13,7 @@ import StudioTypeSelect from "./StudioTypeSelect";
 import PersonSelect from "./PersonSelect";
 import ErrorBoundary from "./ErrorBoundary";
 import { ToastContainer } from "./Toast";
+import DriveDownloadBanner from "./DriveDownloadBanner";
 import {
   saveSession,
   loadSession,
@@ -165,6 +166,7 @@ export default function AppShell() {
       )}
 
       <ToastContainer />
+      <DriveDownloadBanner />
       <ErrorBoundary>
         {step === "landing"    && <Landing />}
         {step === "typeSelect" && <TypeSelect />}
