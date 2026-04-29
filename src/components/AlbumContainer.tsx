@@ -588,11 +588,29 @@ export default function AlbumContainer() {
           {/* 파싱 완료 — 실패 */}
           {templateParsed && slots.length === 0 && !parsingTemplate && parseError && (
             <div style={{ background: "rgba(239,68,68,0.08)", border: "1.5px solid rgba(239,68,68,0.35)",
-              borderRadius: 12, padding: "14px 16px", display: "flex", gap: 12 }}>
-              <span style={{ fontSize: 20 }}>⚠️</span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>슬롯 감지 실패</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>{parseError}</div>
+              borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 12 }}>
+                <span style={{ fontSize: 20 }}>⚠️</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>슬롯 감지 실패</div>
+                  <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>{parseError}</div>
+                </div>
+              </div>
+              {/* Flow C 폴백 — 앨범 배치 포기하고 ZIP 셀렉으로 이동 */}
+              <div style={{
+                paddingTop: 10, borderTop: "1px solid rgba(239,68,68,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+              }}>
+                <span style={{ fontSize: 12, color: "var(--text2)" }}>
+                  템플릿 없이 선별 결과만 ZIP으로 받으시겠어요?
+                </span>
+                <button
+                  className="btn-secondary"
+                  style={{ fontSize: 13, padding: "7px 16px", whiteSpace: "nowrap", flexShrink: 0 }}
+                  onClick={() => setStep("folderGallery")}
+                >
+                  ← ZIP 셀렉으로 돌아가기
+                </button>
               </div>
             </div>
           )}
