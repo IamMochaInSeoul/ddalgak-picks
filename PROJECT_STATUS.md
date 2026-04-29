@@ -1,7 +1,7 @@
 # 딸깍픽스 (ddalgak-picks) — PROJECT STATUS
 
-> **마지막 업데이트:** 2026-04-28
-> **현재 버전:** v0.3.0 — v3.0 베타 (PR 7~17 완료, 배포 완료)
+> **마지막 업데이트:** 2026-04-29
+> **현재 버전:** v0.3.1 (배포 완료)
 > **배포 URL:** https://ddalgak-picks.vercel.app
 > **GitHub:** https://github.com/IamMochaInSeoul/ddalgak-picks (main 브랜치)
 
@@ -65,10 +65,10 @@ Landing (2카드)
 #### Flow B · 스튜디오 폴더 셀렉 + 앨범 배치 (셀렉용 폴더 있음)
 
 - **대상:** 스튜디오에서 의상·배경별 폴더 구조를 제공받은 고객
-- **입력:** 폴더 여러 개 (만삭/, 베이비본/, 100일/, 돌/ 등)
+- **입력:** 폴더 여러 개 (만삭/, 베이비본/, 100일/, 돌/ 등) + Google Drive 폴더
 - **처리:** 폴더별 독립 분석(이벤트 태그 자동 추정 → Flow A 동일 파이프라인)
 - **출력:** 폴더 탭 UI → 선별 결과 → ZIP (폴더 구조 보존) → 앨범 배치로 이어가기
-- **상태:** ✅ FolderUpload + FolderGallery 구현 완료 (v0.2.x)
+- **상태:** ✅ 구현 완료
 
 #### Flow C · 스튜디오 폴더 셀렉 + ZIP만 (사진만 있는 경우)
 
@@ -76,7 +76,8 @@ Landing (2카드)
 - **입력:** 사진 파일 or 폴더 (직접 구분)
 - **처리:** Flow B와 동일 파이프라인
 - **출력:** 폴더 탭 UI → 선별 결과 → ZIP 저장 (앨범 배치 버튼 없음)
-- **상태:** ✅ FolderUpload + FolderGallery 공유 구현 (v0.2.x, flow 값으로 분기)
+- **폴백:** AlbumContainer 파싱 실패 시 FolderGallery로 자동 전환 (구현 완료)
+- **상태:** ✅ 구현 완료
 
 #### 앨범 배치 (AlbumContainer) — Flow B 이후 단계
 
@@ -91,57 +92,9 @@ Landing (2카드)
 
 1. **폴더 구조 유지 셀렉** — 경쟁사가 못하는 본질적 차별점
 2. **이벤트 자동 태깅** — 폴더명에서 만삭/베이비본/100일/돌 등 자동 분류
-3. **중복 제거 — 과거 셀렉 기억하는 AI** — pHash 지문 이력 기반, 이미 쓴 컷 자동 제외 (Phase 0 미구현)
+3. **중복 제거 — 과거 셀렉 기억하는 AI** — pHash 지문 이력 기반, 이미 쓴 컷 자동 제외 ✅ 구현완료
 4. **AI 보정 샘플 → 전체** — Try Before Buy, Before/After 슬라이더 (Phase 1)
 5. **100% 로컬 셀렉 + 선택적 서버 보정** — 사진 원본은 기본 브라우저에서만
-
-### UX 원칙 (토스식 6원칙)
-
-1. **한 화면 한 결정** — 기본 CTA 하나, 보조 행동은 숨김
-2. **숫자는 먼저 공개** — 예상 시간·감지 장수를 분석 시작 전 노출
-3. **다음 액션은 시스템이 추천** — 갤러리 진입 즉시 베스트가 기본 선택된 상태
-4. **결제는 2초** — (Phase 2 적용 시) 카카오페이 원탭 기본
-5. **로딩은 스토리텔링** — "눈 감은 컷 17장 제외, 흔들림 8장 제외, 베스트 10장 선정"
-6. **무료 재시도·수정 무제한** — 실수해도 되돌릴 수 있음
-
----
-
-### 핵심 데이터 타입
-
-```ts
-// flow 정의 (store.ts)
-// A = 사진만 셀렉 (개인용)
-// B = 스튜디오 폴더 셀렉 + 앨범 배치 (셀렉용 폴더 있음)
-// C = 스튜디오 폴더 셀렉 + ZIP만 (폴더 없음)
-type Flow = "A" | "B" | "C" | null;
-
-type EventTag =
-  | "maternity" | "newborn" | "50days" | "100days"
-  | "first_birthday" | "wedding" | "family"
-  | "pet_profile" | "travel" | "other";
-
-interface FolderSession {
-  id: string;
-  folderName: string;
-  eventTag: EventTag;
-  files: File[];
-  status: "pending" | "analyzing" | "done" | "error";
-  progress: number;       // 0~1
-  stage: string;          // 분석 단계 텍스트
-  photos: Map<string, PhotoEntry>;
-  groups: PhotoGroup[];
-  targetCount: number;
-  errorMessage?: string;
-}
-
-// AppState 추가 필드 (구현 완료)
-interface AppState {
-  step: "landing" | "typeSelect" | "upload" | "analysis" | "gallery" | "album"
-      | "studioSelect" | "folderUpload" | "folderGallery";
-  flow: Flow;
-  folderSessions: FolderSession[];
-}
-```
 
 ---
 
@@ -153,51 +106,105 @@ interface AppState {
 ✅ const a = useStore((s) => s.a)          → 개별 셀렉터만 사용
 ```
 
-### 빌드·배포 제약
-- **FUSE 파일시스템:** 프로젝트 폴더 내 `rm -rf dist/` 불가, /tmp 기존 빌드 폴더 삭제 불가
-- **빌드 명령:** `npx vite build --outDir /tmp/ddalgak-buildN --emptyOutDir` (N을 매번 증가)
-  - 현재까지 build1~build5 사용 → 다음은 `/tmp/ddalgak-build6`
-- **dist 업데이트:** 빌드 결과를 `dist/assets/`에 복사, `dist/index.html`도 복사
-- **배포:** 사용자가 터미널에서 `rm -f .git/index.lock && git add ... && git commit && git push`
-- **git index.lock:** FUSE로 삭제 불가 → 막힐 때 사용자 터미널에서 `rm -f .git/index.lock`
-- **dist는 .gitignore에 있음:** `git add -f dist/`로 강제 추가 필요
+### 빌드·배포 절차 (2026-04-29 보안사고 이후 확정)
 
-### Vercel 배포
-- GitHub 자동 트리거가 간헐적으로 멈춤 → `npx vercel --prod`로 수동 배포
-- 명령: `cd ~/Desktop/"vibe coding"/ddalgak-picks && npx vercel --prod`
-- projectId: `prj_5Z0q2wFkjWQgNnoHzwH9r3bdP1Gd`
-- teamId / orgId: `team_QCXZxUDktkf2o1BPLrh0lVk7`
-- GitHub 계정: IamMochaInSeoul / Google 계정: jungmoca90@gmail.com
+> ⚠️ **dist/ 커밋 절대 금지** — Vite는 VITE_* 환경변수를 번들에 인라인한다.
+> dist/를 커밋하면 API 키가 GitHub에 노출된다. 실제 사고 발생 이력 있음 (2026-04-29).
+
+**올바른 배포 순서:**
+```bash
+# 1. 소스 파일만 스테이징 (dist/ 절대 포함 금지)
+cd ~/Documents/Claude/Projects/"vibe coding"/ddalgak-picks
+git add src/ public/ index.html vercel.json package.json ...
+
+# 2. 커밋
+git commit -m "feat: ..."
+
+# 3. push + Vercel 소스 빌드 배포
+git push && npx vercel --prod
+```
+
+**빌드가 필요할 때 (타입 체크, 로컬 확인 용도):**
+```bash
+npx vite build --outDir /tmp/ddalgak-buildN   # N은 매번 증가. 현재 build8까지 사용
+```
+
+**사전 push 보안 체크:**
+```bash
+git diff --staged | grep -E "VITE_|AIza|ya29"  # 출력 없어야 안전
+```
+
+### 환경변수
+
+| 변수 | 용도 | 등록 위치 |
+|------|------|-----------|
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth | `.env` + Vercel |
+| `VITE_GOOGLE_API_KEY` | Google Picker / Drive API | `.env` + Vercel (도메인 제한 설정 완료) |
+| `VITE_PORTONE_STORE_ID` | PortOne 결제 | Vercel (미등록 — 결제 비활성) |
+| `VITE_PORTONE_CHANNEL_KEY` | PortOne 결제 | Vercel (미등록 — 결제 비활성) |
+| `VITE_SUPABASE_URL` | Supabase | Vercel (미등록) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase | Vercel (미등록) |
+
+### Vercel 프로젝트 정보
+
+- **projectId:** `prj_5Z0q2wFkjWQgNnoHzwH9r3bdP1Gd`
+- **teamId / orgId:** `team_QCXZxUDktkf2o1BPLrh0lVk7`
+- **GitHub 계정:** IamMochaInSeoul
+- **Google 계정:** jungmoca90@gmail.com
+- **올바른 프로젝트 경로:** `~/Documents/Claude/Projects/"vibe coding"/ddalgak-picks`
 
 ---
 
-## 구현 완료 기능 현황 (v0.2.1 기준)
+## 구현 완료 기능 현황 (v0.3.1 기준)
 
-### ✅ 랜딩 (v0.2.1)
+### ✅ 랜딩
 - 2카드: "사진만 셀렉" (개인용) / "스튜디오용 셀렉"
-- hover 시 카드 부상 + 보라색 글로우 애니메이션
-- 각 카드에 배지 (용례) + CTA 버튼
+- SEO 최적화 (title, description, OG 태그, `<noscript>` 한국어 콘텐츠)
 
-### ✅ StudioTypeSelect (v0.2.1 신규)
-- "셀렉용 폴더 있어요" (flow B → 앨범 배치까지) / "사진만 있어요" (flow C → ZIP만)
+### ✅ StudioTypeSelect
+- "셀렉용 폴더 있어요" (flow B) / "사진만 있어요" (flow C)
 - 각 옵션에 단계 흐름 배지로 시각화
 
-### ✅ FolderUpload (v0.2.0 신규)
+### ✅ FolderUpload (v0.3.1 개선)
 - 다중 폴더 드래그앤드롭 (FileSystemEntry API 재귀 읽기)
 - 폴더별 이벤트 태그 자동 추론 (eventTagger.ts) + 수동 변경 가능
 - 폴더별 목표 장수 개별 설정 (10/20/30/50 프리셋 + 직접 입력)
 - 유사 사진 최대 허용 (maxPerGroup) 전역 설정
-- 폴더 추가/삭제/전체 초기화
+- **Google Drive 연동** (GIS OAuth + Picker + Drive API)
+  - 폴더 선택 즉시 백그라운드 다운로드 시작 (비블로킹)
+  - 다운로드 중에도 Drive 버튼 재클릭 → 추가 폴더 선택 가능
+  - 완료 시 브라우저 Notification API로 OS 알림
 
-### ✅ FolderGallery (v0.2.0 신규)
+### ✅ DriveDownloadBanner (v0.3.1 신규)
+- 모든 화면 하단에 항상 떠있는 플로팅 배너
+- driveQueue가 Zustand 전역 스토어 → 다른 화면 이동 후에도 다운로드 지속
+- 폴더별 현재/전체 장수 + 전체 진행 바 시각화
+- 완료 후 "🚀 분석 시작하러 가기" 버튼 / 에러 항목 개별 닫기
+
+### ✅ FolderGallery (v0.3.0 개선)
 - 폴더별 순차 분석 (MediaPipe 메모리 충돌 방지)
 - 탭 바: 각 탭에 상태(⏳/✓/⚠️) + 선별 장수 배지
-- 썸네일 그리드 + 클릭으로 선택/해제
-- 품질 배지 (HIGH/MED/LOW)
-- 분석 진행 프로그레스 바 (단계 텍스트 포함)
+- **갤러리 뷰 탭:** 선택됨 / 제외됨 / 전체 3탭 (폴더 탭 하위)
+- **감점 사유 배지:** 눈 감음 / 흔들림 / 옆모습 / 저화질 등 한국어 표시
+- **🔁 이전 배지:** 과거 세션에서 사용한 사진 표시
 - 하단 고정 바: ZIP 저장 + flow B일 때만 "앨범 배치하기 →" 버튼
+- ZIP 저장 시 pHash 지문 IndexedDB에 저장 (다음 세션 중복 감지용)
 
-### ✅ eventTagger.ts (v0.2.0 신규)
+### ✅ 과거 세션 중복 제거 (v0.3.0 신규)
+- `src/lib/pastSelectionStore.ts` — IndexedDB `ddalgak-dedupe` DB
+  - pHash(bigint→string) + filename + sessionId + savedAt 저장
+  - 원본 사진 픽셀 미저장 (개인정보 안전)
+  - `savePastSelections()` / `loadPastHashes()` / `clearOldHashes(30일)`
+- `src/lib/dedupe.ts`
+  - `hammingDistance(a, b)` — XOR 비트 카운트
+  - `findPastDupes(photos, pastRecords, threshold=8)` — Hamming ≤ 8 매칭
+  - 매칭 시 `DupeMatch { matchedFilename, matchedSessionId, distance }` 반환
+
+### ✅ Flow C 폴백 (v0.3.0 신규)
+- AlbumContainer: 템플릿 파싱 성공했으나 슬롯이 0개일 때
+- "← ZIP 셀렉으로 돌아가기" 버튼 → `setStep("folderGallery")`
+
+### ✅ eventTagger.ts
 - 한국어/영어 폴더명 → EventTag 자동 추론
 - 만삭/신생아/50일/백일/돌잔치/웨딩/가족/펫/여행/기타 10개 태그
 
@@ -214,97 +221,103 @@ interface AppState {
 - 재추출 최대 5회, 줌 모달 (1~500% + 드래그 패닝)
 - 취향 재추출: 20장 카드 스와이프 → 가중치 조정 → 즉시 재선별
 
-### ✅ 업로드 화면 — Flow A용 (v0.1.4)
-- 폴더 드래그앤드롭 (FileSystemEntry API 재귀 읽기)
-- "사진 파일 선택" + "폴더째 선택" 버튼 2종
-- 선택 초기화 버튼
-
 ### ✅ 세션 지속성
 - beforeunload 경고 (분석 중/갤러리/folderGallery)
 - IndexedDB 자동저장 3초 디바운스 (24h TTL)
 - 재방문 복구 배너
 
 ### ✅ 앨범 배치 (AlbumContainer) — v0.1.3
-- 스튜디오 템플릿 폴더 파싱 (액자 capacity=1 / 앨범 capacity=3 / 일반 capacity=2)
-- 다중폴더 드래그앤드롭 + 파일 직접 드롭 fallback
-- Google Drive 연동 (GIS OAuth + Picker + Drive API)
-  - 필요 env: `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`
+- 스튜디오 템플릿 폴더 파싱
 - AI 자동 배치(`autoAssign`) + 수동 배치
 - ZIP 다운로드 (템플릿 폴더 구조 그대로)
 
+### ✅ 수익화 인프라
+- **Google AdSense:** `public/ads.txt` 배포 완료 (재심사 대기 1~2주)
+- **개인정보처리방침:** `/privacy` 페이지 (vercel.json rewrite 설정)
+- **PortOne 결제:** 코드 구현 완료, 환경변수 미등록으로 비활성 상태
+
 ---
 
-## 주요 파일 구조 (v0.2.1 기준)
+## 주요 파일 구조 (v0.3.1 기준)
 
 ```
 src/
 ├── components/
-│   ├── AppShell.tsx          ← 스텝 라우팅 + 세션 자동저장 + 복구 배너
-│   ├── Landing.tsx           ← 2카드 (사진만/스튜디오용) — v0.2.1 재작성
-│   ├── StudioTypeSelect.tsx  ← 셀렉용 폴더 有無 분기 — v0.2.1 신규
-│   ├── FolderUpload.tsx      ← 다중 폴더 드롭존 — v0.2.0 신규
-│   ├── FolderGallery.tsx     ← 폴더별 탭 갤러리 + ZIP — v0.2.0 신규
-│   ├── TypeSelect.tsx        ← Flow A 피사체 선택
-│   ├── Upload.tsx            ← Flow A 파일/폴더 업로드
-│   ├── Analysis.tsx          ← Flow A 분석 진행 화면
-│   ├── Gallery.tsx           ← Flow A 메인 갤러리
-│   ├── FeedbackMode.tsx      ← 카드 스와이프 취향 피드백
+│   ├── AppShell.tsx            ← 스텝 라우팅 + 세션 자동저장 + 복구 배너 + DriveDownloadBanner
+│   ├── DriveDownloadBanner.tsx ← Drive 백그라운드 다운로드 플로팅 배너 (v0.3.1 신규)
+│   ├── Landing.tsx             ← 2카드 (사진만/스튜디오용)
+│   ├── StudioTypeSelect.tsx    ← 셀렉용 폴더 有無 분기
+│   ├── FolderUpload.tsx        ← 다중 폴더 드롭존 + Drive 백그라운드 다운로드
+│   ├── FolderGallery.tsx       ← 폴더별 탭 갤러리 + 선택/제외/전체 뷰 + 감점배지 + ZIP
+│   ├── TypeSelect.tsx          ← Flow A 피사체 선택
+│   ├── Upload.tsx              ← Flow A 파일/폴더 업로드
+│   ├── Analysis.tsx            ← Flow A 분석 진행 화면
+│   ├── Gallery.tsx             ← Flow A 메인 갤러리
+│   ├── FeedbackMode.tsx        ← 카드 스와이프 취향 피드백
 │   ├── PhotoCard.tsx
-│   ├── PhotoModal.tsx        ← 줌·패닝 모달
-│   ├── AlbumContainer.tsx    ← 앨범 배치 (Flow B 이후 단계)
+│   ├── PhotoModal.tsx          ← 줌·패닝 모달
+│   ├── AlbumContainer.tsx      ← 앨범 배치 (Flow B 이후 단계) + Flow C 폴백 버튼
+│   ├── Toast.tsx               ← 토스트 알림
 │   ├── LangToggle.tsx
 │   └── ErrorBoundary.tsx
 ├── lib/
-│   ├── types.ts              ← 전체 타입 + AppState (flow/folderSessions 추가 완료)
-│   ├── store.ts              ← Zustand (setFlow + folderSessions CRUD 완료)
-│   ├── eventTagger.ts        ← 폴더명 → EventTag 자동 추론 — v0.2.0 신규
-│   ├── analyzer.ts           ← 분석 파이프라인 진입점
-│   ├── scorer.ts             ← 채점 + 씬 다양성 선별
-│   ├── phash.ts              ← pHash + Hamming + 씬 클러스터링
-│   ├── laplacian.ts          ← Laplacian variance
-│   ├── feedbackLearning.ts   ← 취향 재추출 알고리즘
-│   ├── sessionPersist.ts     ← IndexedDB 세션 저장/복구
-│   ├── albumTypes.ts         ← Flow C(앨범 배치) 전용 타입
+│   ├── types.ts                ← 전체 타입 (DriveQueueItem 추가)
+│   ├── store.ts                ← Zustand (driveQueue 전역 상태 + CRUD 액션 추가)
+│   ├── eventTagger.ts          ← 폴더명 → EventTag 자동 추론
+│   ├── pastSelectionStore.ts   ← IndexedDB pHash 지문 저장 (v0.3.0 신규)
+│   ├── dedupe.ts               ← Hamming 거리 기반 과거 세션 중복 감지 (v0.3.0 신규)
+│   ├── googleDrive.ts          ← GIS OAuth + Picker + Drive API
+│   ├── analyzer.ts             ← 분석 파이프라인 진입점
+│   ├── scorer.ts               ← 채점 + 씬 다양성 선별
+│   ├── phash.ts                ← pHash + Hamming + 씬 클러스터링
+│   ├── laplacian.ts            ← Laplacian variance
+│   ├── feedbackLearning.ts     ← 취향 재추출 알고리즘
+│   ├── sessionPersist.ts       ← IndexedDB 세션 저장/복구
+│   ├── albumTypes.ts           ← Flow C(앨범 배치) 전용 타입
+│   ├── payment.ts              ← PortOne 결제 (비활성)
 │   └── i18n.ts
 ├── messages/
 │   ├── ko.json
 │   └── en.json
-dist/
-├── index.html               ← 현재 참조: index-Bth3krMX.js (v0.2.1 빌드)
-└── assets/
-    ├── index-Bth3krMX.js    ← v0.2.1 빌드 (최신, 미커밋)
-    ├── index-B_zzzRE2.js    ← v0.2.0 빌드
-    ├── index-B7rHhheK.js    ← v0.2.0-pre 빌드
-    ├── index-BvGccAyR.js    ← v0.1.4 빌드
-    ├── index-C4CHNhkV.css
-    ├── jszip.min-CAN6tTy6.js ← v0.2.1 빌드용
-    └── vision_bundle-Df2dKBJJ.js
+public/
+│   ├── ads.txt                 ← Google AdSense 인증 (v0.3.0 신규)
+│   └── privacy.html            ← 개인정보처리방침 (v0.3.0 신규)
+index.html                      ← SEO 메타태그 + OG + noscript 한국어 콘텐츠
+vercel.json                     ← buildCommand + /privacy rewrite 규칙
+SECURITY.md                     ← 보안 지침 + 사고 이력 + 키 교체 절차
 ```
+
+---
+
+## 보안 이력
+
+### 2026-04-29 VITE_GOOGLE_API_KEY 노출 사고
+
+- **원인:** `git add -f dist/` 포함 커밋 → GitHub 공개 저장소에 번들된 API 키 노출
+- **조치:** GitGuardian 알림 → 기존 키 삭제 → 새 키 발급 + 도메인 제한 설정 → Vercel 환경변수 교체 → SECURITY.md 작성
+- **재발 방지:** `dist/` 커밋 절대 금지, 배포는 소스 파일만 커밋 + `npx vercel --prod`로 Vercel이 빌드
 
 ---
 
 ## 로드맵
 
-### ✅ Phase 0 — 완료 항목
+### ✅ Phase 0 — 전부 완료 (v0.3.0~v0.3.1)
 
-- [x] 랜딩 2카드 리디자인 (v0.2.1)
-- [x] StudioTypeSelect 분기 화면 (v0.2.1)
-- [x] FolderUpload — 다중 폴더 드롭존 + 이벤트 태그 설정 (v0.2.0)
-- [x] FolderGallery — 폴더별 순차 분석 + 탭 갤러리 + ZIP (v0.2.0)
-- [x] eventTagger.ts — 폴더명 → EventTag 자동 추론 (v0.2.0)
-- [x] types.ts / store.ts — flow, folderSessions, EventTag 타입 추가 (v0.2.0)
-
-### 🔲 Phase 0 — 남은 항목
-
-- [ ] **분석 로딩 스토리텔링** — "눈 감은 컷 N장 제외..." 실수치 단계별 노출 (Analysis.tsx 개선)
-- [ ] **FolderGallery 갤러리 개선** — 선택/제외 토글, 감점 사유 표시, 그룹 뷰
-- [ ] **중복 제거 (IndexedDB 로컬)** — `dedupe.ts` + `pastSelectionStore.ts`
-  - pHash 지문 + 파일명만 저장 (원본 안 보냄)
-  - Hamming ≤ 8 매칭 시 "🔁 이전 세션에 사용됨" 배지 + 기본 제외
-- [ ] **Flow C 폴백** — AlbumContainer 파싱 실패 시 FolderGallery로 자동 전환
+- [x] 랜딩 2카드 리디자인
+- [x] StudioTypeSelect 분기 화면
+- [x] FolderUpload — 다중 폴더 드롭존 + 이벤트 태그 설정
+- [x] FolderGallery — 선택/제외/전체 뷰 + 감점 사유 배지 + 중복 배지
+- [x] 과거 세션 중복 제거 (pastSelectionStore + dedupe)
+- [x] Flow C 폴백 (AlbumContainer 파싱 실패 시 FolderGallery 복귀)
+- [x] Google Drive 백그라운드 다운로드 (비블로킹 큐)
+- [x] DriveDownloadBanner — 전 화면 플로팅 배너 + 브라우저 알림
+- [x] AdSense ads.txt 배포
+- [x] 개인정보처리방침 페이지 (/privacy)
+- [x] SECURITY.md + 보안 배포 절차 확립
 
 ### 🔲 Phase 1 — 프리미엄 업셀 + 재방문 엔진
 
+- [ ] 분석 로딩 스토리텔링 ("눈 감은 컷 N장 제외..." 실수치 단계별 노출)
 - [ ] 취향 학습 영속화 (이벤트 태그별 가중치 IndexedDB 저장)
 - [ ] 워터마크 프리뷰 + 저장 방지
 - [ ] AI 보정 (Replicate API + CodeFormer + GFPGAN)
@@ -312,7 +325,9 @@ dist/
 
 ### 🔲 Phase 2 — 비즈니스 레이어
 
-- 계정 시스템 / 서버 지문 동기화 / 결제 / 알림톡 CRM
+- PortOne 결제 활성화 (환경변수 등록 필요)
+- 계정 시스템 / 서버 지문 동기화 / 알림톡 CRM
+- Supabase 연동 (환경변수 등록 필요)
 
 ---
 
@@ -323,45 +338,17 @@ dist/
 | v0.1.1 | 초기 릴리즈: 사진 선별 + 취향 재추출 | ✅ 배포됨 |
 | v0.1.2 | 세션 지속성 (beforeunload + IndexedDB) | ✅ 배포됨 |
 | v0.1.3 | 앨범 기능 (피드백 + 다중폴더 + Google Drive) | ✅ 배포됨 |
-| v0.1.4 | 랜딩 텍스트 + 업로드 폴더 버그 수정 + 드롭 안정화 | ⏳ 수동 배포 필요 |
-| v0.2.0 | Phase 0: Flow B/C 신규 (FolderUpload+FolderGallery+eventTagger) | ⏳ 수동 배포 필요 |
-| v0.2.1 | UX 플로우 재설계: 2카드 랜딩 + StudioTypeSelect 분기 | ⏳ 커밋·배포 필요 |
+| v0.1.4 | 랜딩 텍스트 + 업로드 폴더 버그 수정 + 드롭 안정화 | ✅ 배포됨 |
+| v0.2.0 | Phase 0: Flow B/C 신규 (FolderUpload+FolderGallery+eventTagger) | ✅ 배포됨 |
+| v0.2.1 | UX 플로우 재설계: 2카드 랜딩 + StudioTypeSelect 분기 | ✅ 배포됨 |
+| v0.3.0 | FolderGallery 개선 + dedupe + Flow C 폴백 + SEO + AdSense + 보안 | ✅ 배포됨 |
+| v0.3.1 | Drive 백그라운드 다운로드 + DriveDownloadBanner + 브라우저 알림 | ✅ 배포됨 |
 
 ---
 
 ## 다음 세션 시작 시 체크리스트
 
-1. v0.2.1 배포 완료 여부 확인 (`npx vercel --prod` 결과)
-2. 미배포라면: 아래 커밋 명령 실행
-3. Phase 0 남은 항목 중 우선순위 결정
-
----
-
-## 커밋 방법 (사용자 터미널)
-
-```bash
-cd ~/Desktop/"vibe coding"/ddalgak-picks
-rm -f .git/index.lock
-
-# v0.2.x 전체 소스 스테이징
-git add src/lib/types.ts src/lib/store.ts src/lib/eventTagger.ts \
-        src/components/AppShell.tsx src/components/Landing.tsx \
-        src/components/StudioTypeSelect.tsx \
-        src/components/FolderUpload.tsx src/components/FolderGallery.tsx
-
-# dist 강제 추가
-git add -f dist/
-
-git commit -m "feat: v0.2.1 — UX 플로우 재설계 + Phase 0 Flow B/C 구현
-
-- Landing: 2카드 (사진만 셀렉 / 스튜디오용 셀렉)
-- StudioTypeSelect: 셀렉용 폴더 有無 분기 신규 화면
-  · 있음(flow B) → FolderUpload → FolderGallery → 앨범 배치
-  · 없음(flow C) → FolderUpload → FolderGallery → ZIP만
-- FolderUpload: 다중 폴더 드롭존 + 이벤트 태그 + 목표장수
-- FolderGallery: 폴더별 순차 분석 + 탭 갤러리 + 폴더구조 ZIP
-- eventTagger: 한국어 폴더명 → EventTag 자동 추론 10종
-- types/store: flow, folderSessions, EventTag, studioSelect step"
-
-git push && npx vercel --prod
-```
+1. `git log --oneline -5` 로 마지막 커밋 확인
+2. `npx vercel ls` 또는 배포 URL 접속으로 배포 상태 확인
+3. Phase 1 남은 항목 중 우선순위 결정
+4. **보안 체크:** `git diff --staged | grep -E "VITE_|AIza|ya29"` 출력 없어야 안전
