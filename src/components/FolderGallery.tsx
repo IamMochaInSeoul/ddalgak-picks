@@ -14,7 +14,7 @@ import { useStore } from "../lib/store";
 import { analyzePhotos } from "../lib/analyzer";
 import { mergePersonClusters } from "../lib/personClustering";
 import { EVENT_TAG_LABELS } from "../lib/eventTagger";
-import type { AppState, FolderSession, PersonCluster, PhotoEntry, DeductionCode } from "../lib/types";
+import type { AppState, FolderSession, PersonCluster, PhotoEntry, PhotoGroup, DeductionCode } from "../lib/types";
 import {
   DEFAULT_WEIGHTS,
   DEFAULT_PET_WEIGHTS,
@@ -25,6 +25,7 @@ import PaymentGate from "./PaymentGate";
 import MonoNumber from "./MonoNumber";
 import NicknameCaptureModal from "./NicknameCaptureModal";
 import UserAddress from "./UserAddress";
+import GroupCompareModal from "./GroupCompareModal";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { applyWatermark } from "../lib/watermark";
 import {
@@ -81,6 +82,7 @@ export default function FolderGallery() {
   const [exported, setExported]         = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   // 중복 정보: folderSessionId → Map<photoId, DupeMatch>
   const [dupeMap, setDupeMap] = useState<Map<string, Map<string, DupeMatch>>>(new Map());
@@ -286,6 +288,38 @@ export default function FolderGallery() {
     allSessionPhotos;
 
   const sessionDupes = activeSession ? (dupeMap.get(activeSession.id) ?? new Map()) : new Map<string, DupeMatch>();
+
+  // Map from photoId → group (for group badge + compare button)
+  const photoGroupMap = new Map<string, PhotoGroup>();
+  if (activeSession) {
+    for (const group of activeSession.groups) {
+      for (const pid of group.photoIds) {
+        photoGroupMap.set(pid, group);
+      }
+    }
+  }
+
+  /** F5: swap best-shot within a group (select chosen, deselect others in same group) */
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const swapGroupBest = useCallback((groupId: string, newBestId: string) => {
+    if (!activeSession) return;
+    const group = activeSession.groups.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupPhotoIds = new Set(group.photoIds);
+    updateSession(activeSession.id, {
+      photos: new Map(
+        [...activeSession.photos.entries()].map(([id, p]) => {
+          if (groupPhotoIds.has(id)) {
+            return [id, { ...p, isSelected: id === newBestId }];
+          }
+          return [id, p];
+        })
+      ),
+      groups: activeSession.groups.map((g) =>
+        g.id === groupId ? { ...g, selectedId: newBestId } : g
+      ),
+    });
+  }, [activeSession, updateSession]);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
@@ -494,6 +528,7 @@ export default function FolderGallery() {
                   const dupe = sessionDupes.get(photo.id);
                   const isSelected = photo.isSelected;
 
+                  const photoGroup = photoGroupMap.get(photo.id);
                   return (
                     <div
                       key={photo.id}
@@ -579,6 +614,24 @@ export default function FolderGallery() {
                           ))}
                         </div>
                       )}
+
+                      {/* 그룹 배지 — N장 중 1장 */}
+                      {photoGroup && photoGroup.photoIds.length > 1 && (
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setCompareGroupId(photoGroup.id); }}
+                          title="유사 컷 비교"
+                          style={{
+                            position: "absolute", top: 4, right: dupe ? 28 : 4,
+                            fontSize: 9, fontWeight: 700, padding: "2px 5px",
+                            borderRadius: 5,
+                            background: "rgba(108,99,255,0.85)",
+                            color: "#fff",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {photoGroup.photoIds.length}컷
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -643,6 +696,19 @@ export default function FolderGallery() {
       {showNicknameModal && (
         <NicknameCaptureModal onClose={() => setShowNicknameModal(false)} />
       )}
+
+      {/* Group compare modal */}
+      {compareGroupId && activeSession && (() => {
+        const grp = activeSession.groups.find((g) => g.id === compareGroupId);
+        return grp ? (
+          <GroupCompareModal
+            group={grp}
+            photos={activeSession.photos}
+            onSwap={(gid, pid) => swapGroupBest(gid, pid)}
+            onClose={() => setCompareGroupId(null)}
+          />
+        ) : null;
+      })()}
     </div>
   );
 }

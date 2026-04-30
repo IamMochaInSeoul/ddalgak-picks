@@ -9,6 +9,7 @@ import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import NicknameCaptureModal from "./NicknameCaptureModal";
 import UserAddress from "./UserAddress";
+import GroupCompareModal from "./GroupCompareModal";
 import { applyWatermark } from "../lib/watermark";
 import { assignDisplayNames, zipFilename } from "../lib/displayName";
 import { showToast } from "./Toast";
@@ -98,6 +99,7 @@ export default function Gallery() {
 
   // Modal state
   const [modalPhotoId, setModalPhotoId] = useState<string | null>(null);
+  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   // Context menu state
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; photoId: string } | null>(null);
@@ -561,6 +563,16 @@ export default function Gallery() {
                         {selectedEntry && <span className="badge" style={{ borderColor: "var(--accent)", color: "var(--accent2)" }}>선택됨</span>}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCompareGroupId(group.id); }}
+                      style={{
+                        padding: "5px 10px", fontSize: 11, fontWeight: 600,
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6, cursor: "pointer",
+                        color: "var(--text-secondary)",
+                      }}
+                    >비교</button>
                     <span style={{ color: "var(--text2)", fontSize: 18 }}>{isExpanded ? "▲" : "▼"}</span>
                   </div>
                   {isExpanded && (
@@ -625,6 +637,19 @@ export default function Gallery() {
       {showNicknameModal && (
         <NicknameCaptureModal onClose={() => setShowNicknameModal(false)} />
       )}
+
+      {/* Group compare modal */}
+      {compareGroupId && (() => {
+        const grp = groups.find((g) => g.id === compareGroupId);
+        return grp ? (
+          <GroupCompareModal
+            group={grp}
+            photos={photos}
+            onSwap={(gid, pid) => setGroupSelected(gid, pid)}
+            onClose={() => setCompareGroupId(null)}
+          />
+        ) : null;
+      })()}
 
       {/* Photo modal */}
       {modalPhoto && (
