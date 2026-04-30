@@ -14,6 +14,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { inferEventTag, EVENT_TAG_LABELS, ALL_EVENT_TAGS } from "../lib/eventTagger";
+import { getRecommendedCount } from "../lib/recommendedCount";
 import type { EventTag, FolderSession } from "../lib/types";
 import LangToggle from "./LangToggle";
 import type { AppState } from "../lib/types";
@@ -120,7 +121,7 @@ export default function FolderUpload() {
             continue; // 읽기 실패한 폴더는 건너뜀
           }
           if (files.length === 0) continue;
-          addFolderSession(makeSession(entry.name, files, inferEventTag(entry.name), globalTargetCount));
+          { const tag = inferEventTag(entry.name); addFolderSession(makeSession(entry.name, files, tag, getRecommendedCount(tag))); }
           addedCount++;
         }
         if (addedCount === 0) {
@@ -135,7 +136,7 @@ export default function FolderUpload() {
           } catch { /* skip */ }
         }
         if (files.length > 0) {
-          addFolderSession(makeSession("드롭된 사진", files, "other", globalTargetCount));
+          addFolderSession(makeSession("드롭된 사진", files, "other", getRecommendedCount("other")));
         } else {
           setErrorMsg("드롭한 파일 중 이미지가 없어요. JPG/PNG/HEIC 파일을 드롭해주세요.");
         }
@@ -182,7 +183,7 @@ export default function FolderUpload() {
     }
 
     for (const [folderName, files] of byFolder) {
-      addFolderSession(makeSession(folderName, files, inferEventTag(folderName), globalTargetCount));
+      { const tag = inferEventTag(folderName); addFolderSession(makeSession(folderName, files, tag, getRecommendedCount(tag))); }
     }
   }, [addFolderSession, globalTargetCount]);
 
@@ -220,7 +221,7 @@ export default function FolderUpload() {
               files.push(await downloadDriveFile(items[i], token));
               updateDriveQueueItem(qid, { current: i + 1 });
             }
-            addFolderSession(makeSession(picked.name, files, inferEventTag(picked.name), globalTargetCount));
+            { const tag = inferEventTag(picked.name); addFolderSession(makeSession(picked.name, files, tag, getRecommendedCount(tag))); }
             updateDriveQueueItem(qid, { status: "done" });
             showToast(`${picked.name} — ${files.length}장 가져왔어요!`, "✅");
             // 브라우저 알림 (탭이 백그라운드에 있을 때 유용)
@@ -250,7 +251,7 @@ export default function FolderUpload() {
               files.push(await downloadDriveFile(items[i], token));
               updateDriveQueueItem(qid, { current: i + 1 });
             }
-            addFolderSession(makeSession("Drive 사진", files, "other", globalTargetCount));
+            addFolderSession(makeSession("Drive 사진", files, "other", getRecommendedCount("other")));
             updateDriveQueueItem(qid, { status: "done" });
             showToast(`${files.length}장 가져왔어요!`, "✅");
             if ("Notification" in window && Notification.permission === "granted") {
@@ -527,8 +528,13 @@ export default function FolderUpload() {
 
                     {/* 목표 장수 */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
-                      <span style={{ fontSize: 12, color: "var(--text2)" }}>목표</span>
-                      {[10, 20, 30, 50].map((n) => (
+                      <span style={{ fontSize: 12, color: "var(--text2)" }}>
+                        목표
+                        <span style={{ marginLeft: 4, color: "var(--accent)", fontSize: 11 }}>
+                          (추천 {getRecommendedCount(session.eventTag)}장)
+                        </span>
+                      </span>
+                      {Array.from(new Set([getRecommendedCount(session.eventTag), 10, 20, 30, 50])).sort((a, b) => a - b).map((n) => (
                         <button key={n}
                           onClick={() => setFolderSessionTargetCount(session.id, n)}
                           style={{
@@ -537,7 +543,7 @@ export default function FolderUpload() {
                             background: session.targetCount === n ? "rgba(108,99,255,0.15)" : "transparent",
                             color: session.targetCount === n ? "var(--accent2)" : "var(--text2)",
                           }}>
-                          {n}
+                          {n}{n === getRecommendedCount(session.eventTag) ? " ★" : ""}
                         </button>
                       ))}
                       <input type="number" min={1} max={3000} value={session.targetCount}
