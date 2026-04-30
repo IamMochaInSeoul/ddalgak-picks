@@ -2,6 +2,7 @@ import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import type { PhotoType } from "../lib/types";
 import LangToggle from "./LangToggle";
+import { PrimaryButton, SecondaryButton } from "./ui";
 
 const OPTIONS: { type: PhotoType; icon: string; key: "portrait" | "pet" | "mixed" }[] = [
   { type: "portrait", icon: "👤", key: "portrait" },
@@ -21,8 +22,8 @@ export default function TypeSelect() {
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex",
         justifyContent: "space-between", alignItems: "center", padding: "16px 24px",
         borderBottom: "1px solid var(--border)", background: "var(--bg)", zIndex: 100 }}>
-        <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
-          onClick={() => setStep("landing")}>← 뒤로</button>
+        <SecondaryButton style={{ padding: "0 14px", height: 34, fontSize: 13 }}
+          onClick={() => setStep("landing")}>← 뒤로</SecondaryButton>
         <span style={{ fontSize: 16, fontWeight: 700, color: "var(--accent2)" }}>딸깍픽스</span>
         <LangToggle />
       </div>
@@ -48,10 +49,10 @@ export default function TypeSelect() {
           ))}
         </div>
 
-        <button className="btn-primary" style={{ marginTop: 32, width: "100%", fontSize: 16 }}
-          disabled={!photoType} onClick={() => setStep("upload")}>
+        <PrimaryButton fullWidth disabled={!photoType} onClick={() => setStep("upload")}
+          style={{ marginTop: 32, fontSize: 16 }}>
           {t("next")} →
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   );

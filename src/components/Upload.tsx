@@ -3,6 +3,7 @@ import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import UserAddress from "./UserAddress";
+import { PrimaryButton, SecondaryButton } from "./ui";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 폴더 재귀 읽기 유틸 (FileSystemEntry API)
@@ -123,8 +124,8 @@ export default function Upload() {
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex",
         justifyContent: "space-between", alignItems: "center", padding: "16px 24px",
         borderBottom: "1px solid var(--border)", background: "var(--bg)", zIndex: 100 }}>
-        <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
-          onClick={() => setStep("typeSelect")}>← {t("back")}</button>
+        <SecondaryButton style={{ padding: "0 14px", height: 34, fontSize: 13 }}
+          onClick={() => setStep("typeSelect")}>← {t("back")}</SecondaryButton>
         <span style={{ fontSize: 16, fontWeight: 700, color: "var(--accent2)" }}>딸깍픽스</span>
         <LangToggle />
       </div>
@@ -274,18 +275,19 @@ export default function Upload() {
         )}
 
         {/* ── 분석 시작 버튼 ── */}
-        <button
-          className="btn-primary"
-          style={{ width: "100%", fontSize: 16, padding: "14px", opacity: isReady ? 1 : 0.5 }}
+        <PrimaryButton
+          fullWidth
           disabled={!isReady}
+          loading={loadingFolder}
           onClick={startAnalysis}
+          style={{ fontSize: 16 }}
         >
           {loadingFolder
             ? "폴더 읽는 중..."
             : files.length === 0
               ? "사진을 먼저 선택해주세요"
               : t("analyze")}
-        </button>
+        </PrimaryButton>
 
         {files.length === 0 && !loadingFolder && (
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--text2)" }}>

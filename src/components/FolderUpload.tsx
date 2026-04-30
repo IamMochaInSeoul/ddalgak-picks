@@ -17,6 +17,7 @@ import { inferEventTag, EVENT_TAG_LABELS, ALL_EVENT_TAGS } from "../lib/eventTag
 import type { EventTag, FolderSession } from "../lib/types";
 import LangToggle from "./LangToggle";
 import type { AppState } from "../lib/types";
+import { PrimaryButton, SecondaryButton } from "./ui";
 import {
   getGoogleAccessToken,
   openDrivePicker,
@@ -294,10 +295,10 @@ export default function FolderUpload() {
         borderBottom: "1px solid var(--border)",
         background: "var(--bg)",
       }}>
-        <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
+        <SecondaryButton style={{ padding: "0 14px", height: 34, fontSize: 13 }}
           onClick={() => setStep("landing")}>
           ← 뒤로
-        </button>
+        </SecondaryButton>
         <span style={{ fontSize: 16, fontWeight: 700, color: "var(--accent2)" }}>📁 폴더 묶음 셀렉</span>
         <LangToggle />
       </div>
@@ -567,20 +568,21 @@ export default function FolderUpload() {
         )}
 
         {/* ── 분석 시작 ── */}
-        <button
-          className="btn-primary"
-          style={{ width: "100%", fontSize: 16, padding: "14px", opacity: isReady ? 1 : 0.5 }}
+        <PrimaryButton
+          fullWidth
           disabled={!isReady}
+          loading={loading || driveDownloading}
           onClick={startAnalysis}
+          style={{ fontSize: 15 }}
         >
           {loading
             ? "폴더 읽는 중..."
             : driveDownloading
-              ? `⬇ Drive 다운로드 중... (완료 후 분석 가능)`
+              ? "Drive 다운로드 중... (완료 후 분석 가능)"
               : folderSessions.length === 0
                 ? "폴더를 먼저 추가해주세요"
-                : `🚀 ${folderSessions.length}개 폴더 분석 시작 (총 ${totalPhotos.toLocaleString()}장)`}
-        </button>
+                : `${folderSessions.length}개 폴더 분석 시작 — 총 ${totalPhotos.toLocaleString()}장`}
+        </PrimaryButton>
 
       </div>
     </div>
