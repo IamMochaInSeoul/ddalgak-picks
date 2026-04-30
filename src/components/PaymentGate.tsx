@@ -29,7 +29,7 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
       if (!verified) throw new Error("결제 검증 실패 — 고객센터에 문의해주세요.");
       setPayment({ isPaid: true, paymentSessionId: paymentId, receiptEmail: email });
       setWatermarkEnabled(false);
-      showToast("결제 완료! 깨끗한 ZIP 만들고 있어요.", "🎉", 4000);
+      showToast("결제 완료. ZIP을 생성합니다.", "✓", 4000);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "결제 중 오류가 발생했습니다.");
@@ -42,7 +42,7 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
   function handleDevBypass() {
     setPayment({ isPaid: true, paymentSessionId: "dev-bypass", receiptEmail: "dev@local" });
     setWatermarkEnabled(false);
-    showToast("결제 완료! 깨끗한 ZIP 만들고 있어요.", "🎉", 4000);
+    showToast("결제 완료. ZIP을 생성합니다.", "✓", 4000);
     onSuccess();
   }
 

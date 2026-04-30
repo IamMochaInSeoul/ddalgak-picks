@@ -7,6 +7,7 @@
  * - 감점 사유 배지 (눈 감음, 흔들림 등)
  * - 중복 배지 (이전 세션에 사용됨)
  * - ZIP 저장 시 pHash 지문을 IndexedDB에 저장
+ * - v0.4.0 Stage A: MonoNumber 카운터, 이전 배지 이모지 제거
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
@@ -21,6 +22,7 @@ import {
 } from "../lib/types";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
+import MonoNumber from "./MonoNumber";
 import { applyWatermark } from "../lib/watermark";
 import {
   savePastSelections,
@@ -284,7 +286,7 @@ export default function FolderGallery() {
               onClick={handleExport}
               disabled={exporting}
             >
-              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료!" : `⬇ ZIP 저장 (${totalSelected}장)`}
+              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
             </button>
           )}
           <LangToggle />
@@ -417,11 +419,12 @@ export default function FolderGallery() {
                 </span>
                 <span style={{ fontWeight: 700 }}>{activeSession.folderName}</span>
               </div>
-              <div style={{ marginLeft: "auto", fontSize: 13, color: "var(--text2)" }}>
-                총 {activeSession.files.length.toLocaleString()}장 →{" "}
-                <strong style={{ color: "var(--accent2)" }}>
-                  {selectedPhotos.length}장
-                </strong> 선별
+              <div style={{ marginLeft: "auto", fontSize: 13, color: "var(--text-secondary)" }}>
+                <MonoNumber value={activeSession.files.length} /> →{" "}
+                <MonoNumber
+                  value={selectedPhotos.length}
+                  style={{ color: "var(--accent)", fontWeight: 600 }}
+                />
               </div>
             </div>
 
@@ -528,7 +531,7 @@ export default function FolderGallery() {
                         }}
                           title={`이전 세션 사용됨: ${dupe.matchedFilename}`}
                         >
-                          🔁 이전
+                          이전
                         </div>
                       )}
 
@@ -588,7 +591,7 @@ export default function FolderGallery() {
               onClick={handleExport}
               disabled={exporting || totalSelected === 0}
             >
-              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료!" : "⬇ ZIP 저장"}
+              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료." : "ZIP 저장"}
             </button>
             {flow === "B" && (
               <button

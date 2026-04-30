@@ -132,7 +132,7 @@ export default function FeedbackMode() {
           title="나가기"
         >✕</button>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>✨ 내 취향으로 다시 뽑기</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>내 취향으로 다시 뽑기</div>
           <div style={{ fontSize: 12, color: "var(--text2)" }}>
             각 사진에 포함/제외 의견을 주세요 — 키보드: → 포함 · ← 제외 · 스페이스 건너뛰기
           </div>

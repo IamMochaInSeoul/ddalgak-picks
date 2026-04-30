@@ -209,7 +209,7 @@ export default function Gallery() {
       a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
       URL.revokeObjectURL(url);
       setExported(true);
-      showToast(`${photosToExport.length}장 ZIP 저장 완료!`, "🎉");
+      showToast(`${photosToExport.length}장 ZIP 저장 완료.`, "✓");
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
   }, [selectedPhotos, isPaid, freeZipLimit, watermarkEnabled]);
@@ -346,7 +346,7 @@ export default function Gallery() {
             background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)",
             display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
           }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>✨ 내 취향 반영됨</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>내 취향 반영됨</span>
             <div style={{ display: "flex", gap: 4 }}>
               {(["ai", "preference"] as const).map((v) => (
                 <button key={v} onClick={() => setPreferenceView(v)}
@@ -467,7 +467,7 @@ export default function Gallery() {
         {/* ── 제외된 사진 (감점 사유별 그룹) ── */}
         {viewMode === "excluded" && (
           excludedPhotos.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 80, color: "var(--text2)" }}>제외된 사진이 없습니다 🎉</div>
+            <div style={{ textAlign: "center", padding: 80, color: "var(--text2)" }}>제외된 사진이 없습니다.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {exclusionBuckets.map((bucket) => {
@@ -598,7 +598,7 @@ export default function Gallery() {
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
             {exporting ? tExport("downloading")
               : !isPaid && selectedPhotos.length > freeZipLimit
-                ? `🔒 전체 다운로드 (${selectedPhotos.length}장)`
+                ? `전체 다운로드 (${selectedPhotos.length}장)`
                 : `ZIP 다운로드 (${selectedPhotos.length}장)`}
           </button>
         </div>
@@ -642,7 +642,7 @@ export default function Gallery() {
             }}
           >✕</button>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
-            ✨ AI 판단이 아쉬우신가요?
+            AI 판단이 아쉬우신가요?
           </div>
           <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12, lineHeight: 1.5 }}>
             사진 20장에 의견을 주시면<br />내 취향으로 다시 뽑아드려요 (약 3~5분)
@@ -674,7 +674,7 @@ export default function Gallery() {
             boxShadow: "0 4px 14px rgba(108,99,255,0.5)",
           }}
           title="내 취향으로 다시 뽑기"
-        >✨</button>
+        >↺</button>
       )}
 
       {/* ── 재추출 로딩 오버레이 ── */}

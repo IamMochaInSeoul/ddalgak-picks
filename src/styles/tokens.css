@@ -1,0 +1,93 @@
+/**
+ * tokens.css — 딸깍픽스 디자인 토큰
+ * "다크룸의 큐레이터" 비주얼 시스템 (DESIGN_DIRECTION.md §3-1~§3-5)
+ *
+ * Stage A: 이 파일을 main.tsx에서 globals.css보다 먼저 import.
+ * Stage B: 각 컴포넌트가 --bg/--text 등 레거시 별칭 대신 이 토큰을 직접 참조.
+ */
+
+:root {
+  /* ── Surface ───────────────────────────────────────────────────────────── */
+  /* 라이트룸 다크 톤. 순수 #000은 피한다 (피로). 따뜻한 기를 약간 품는다. */
+  --bg-base:     #0E0D0B;   /* 메인 배경 */
+  --bg-elevated: #16140F;   /* 카드·패널 */
+  --bg-overlay:  #1D1A14;   /* 모달·드롭다운·호버 */
+
+  /* ── Borders ───────────────────────────────────────────────────────────── */
+  --border-subtle: #26221A;   /* 기본 구분선 — 거의 안 보이게 */
+  --border-strong: #3A3328;   /* 강조 구분선 */
+
+  /* ── Text ──────────────────────────────────────────────────────────────── */
+  /* 따뜻한 오프화이트. 순수 #FFF는 너무 차갑다. */
+  --text-primary:   #F2EDE3;   /* 본문 */
+  --text-secondary: #A39B89;   /* 보조 정보·캡션 */
+  --text-tertiary:  #6B6555;   /* 메타데이터·타임스탬프 */
+  --text-disabled:  #443F35;
+
+  /* ── Accent — 박물관 골드 ────────────────────────────────────────────── */
+  /* 결제 CTA·진행 중인 상태·중요 강조에만 사용. 일반 버튼은 모노크롬. */
+  --accent:      #C9A961;
+  --accent-soft: rgba(201, 169, 97, 0.12);   /* 12% — 호버 배경 등 */
+  --accent-dim:  #D4BC82;   /* 보조 강조 텍스트용 (구 --accent2 대체) */
+
+  /* ── Status ────────────────────────────────────────────────────────────── */
+  --critical: #B23B2A;   /* 옥스블러드. 형광 빨강 금지. */
+  --warning:  #C8923D;   /* 액센트와 통일감 */
+
+  /* ── Photo overlay ─────────────────────────────────────────────────────── */
+  --photo-overlay: rgba(14, 13, 11, 0.72);
+
+  /* ── Typography ─────────────────────────────────────────────────────────── */
+  --font-display:
+    "Spectral", "Noto Serif KR", "Nanum Myeongjo",
+    Georgia, serif;
+  --font-sans:
+    "Pretendard Variable", "Pretendard",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+  --font-mono:
+    "JetBrains Mono", "IBM Plex Mono", "SF Mono",
+    ui-monospace, monospace;
+
+  /* 스케일 — 본문은 더 작게, 헤드라인은 더 크게 (콘트라스트 강화) */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   18px;
+  --text-lg:   24px;
+  --text-xl:   36px;
+  --display-1: 56px;
+  --display-2: 80px;
+
+  --leading-tight: 1.1;
+  --leading-base:  1.55;
+  --tracking-display:   -0.02em;
+  --tracking-uppercase:  0.12em;
+
+  /* ── Spacing ────────────────────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* ── Radii & Shadow ─────────────────────────────────────────────────────── */
+  --radius-sm:    2px;   /* 버튼·인풋 — 통통 튀지 않게 */
+  --radius-md:    4px;   /* 카드 */
+  --radius-lg:    8px;   /* 모달 */
+  --radius-photo: 0;     /* 사진은 절대 둥글게 자르지 않는다 */
+
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  /* ── Motion ─────────────────────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-decel:    cubic-bezier(0.0, 0.0, 0.2, 1);
+
+  --dur-fast: 120ms;   /* 호버 */
+  --dur-base: 240ms;   /* 모달·탭 전환 */
+  --dur-slow: 480ms;   /* 페이지 전환·큰 reveal */
+}
