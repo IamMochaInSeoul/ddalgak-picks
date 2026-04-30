@@ -18,11 +18,13 @@ import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
-  { key: "eye",       label: "눈 감음",        emoji: "😑", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
-  { key: "blur",      label: "흔들림·초점",    emoji: "💫", codes: ["BLUR"] },
-  { key: "side",      label: "측면 얼굴",      emoji: "↩️", codes: ["SIDE_FACE"] },
-  { key: "noface",    label: "인물 감지 불가", emoji: "🔍", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
-  { key: "other",     label: "기타 제외",      emoji: "📋", codes: [] },   // catch-all
+  { key: "eye",    label: "눈 감음",        emoji: "😑", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
+  { key: "blur",   label: "흔들림·초점",    emoji: "💫", codes: ["BLUR", "BLUR_NOISE"] },
+  { key: "side",   label: "측면 얼굴",      emoji: "↩️", codes: ["SIDE_FACE"] },
+  { key: "noface", label: "인물 감지 불가", emoji: "🔍", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
+  { key: "other",  label: "기타 제외",      emoji: "📋", codes: [] },   // catch-all
+  // Info-only codes (not shown in exclusion tabs)
+  // EYE_SQUINT_SMILE, BLUR_AESTHETIC_BOKEH — no exclusion, informational only
 ];
 
 function getExclusionGroupKey(deductions: string[]): string {

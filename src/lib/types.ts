@@ -23,7 +23,13 @@ export type DeductionCode =
   | "SIDE_FACE"
   | "EYE_REGION_DARK"
   | "LOW_CONFIDENCE"
-  | "NO_SUBJECT";
+  | "NO_SUBJECT"
+  /** 웃을 때 찡그린 눈 — 감점 없음, 정보 목적 */
+  | "EYE_SQUINT_SMILE"
+  /** 얼굴 선명 + 배경 흐림 (아웃포커싱) — 감점 없음 */
+  | "BLUR_AESTHETIC_BOKEH"
+  /** 저조도 노이즈 — 경미한 감점 */
+  | "BLUR_NOISE";
 
 export type ConfidenceGrade = "HIGH" | "MEDIUM" | "LOW";
 

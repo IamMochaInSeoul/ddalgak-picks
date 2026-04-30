@@ -48,12 +48,15 @@ function stageLabel(s: string) { return STAGE_LABELS[s] ?? s; }
 
 // ── 감점 사유 레이블 ────────────────────────────────────────────────────────
 const DEDUCTION_LABELS: Record<DeductionCode, string> = {
-  EYE_CLOSED:       "눈 감음",
-  BLUR:             "흔들림",
-  SIDE_FACE:        "옆모습",
-  EYE_REGION_DARK:  "눈 어두움",
-  LOW_CONFIDENCE:   "저신뢰",
-  NO_SUBJECT:       "피사체 없음",
+  EYE_CLOSED:            "눈 감음",
+  BLUR:                  "흔들림",
+  SIDE_FACE:             "옆모습",
+  EYE_REGION_DARK:       "눈 어두움",
+  LOW_CONFIDENCE:        "저신뢰",
+  NO_SUBJECT:            "피사체 없음",
+  EYE_SQUINT_SMILE:      "웃음 (눈 가늘어짐)",
+  BLUR_AESTHETIC_BOKEH:  "아웃포커싱",
+  BLUR_NOISE:            "저조도 노이즈",
 };
 
 // ── 갤러리 뷰 탭 ──────────────────────────────────────────────────────────

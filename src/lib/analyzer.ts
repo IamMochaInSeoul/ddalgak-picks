@@ -550,7 +550,17 @@ export async function analyzePhotos(
 
           const finalScore = calcPortraitScore(worstBlendshapes, headYaw, headPitch, sharpFace, weights);
           entry.score = finalScore;
-          entry.deductions = calcPortraitDeductions(finalScore, 0.8);
+          entry.faceSharpness   = sharpFace;
+          entry.globalSharpness = sharpCenter;
+
+          // F4: pass face-feature extras for refined deductions
+          const primaryFace = faceFeaturesList[0];
+          entry.deductions = calcPortraitDeductions(finalScore, 0.8, {
+            isLaughingSquint:  primaryFace?.isLaughingSquint,
+            isGenuineEyeClose: primaryFace?.isGenuineEyeClose,
+            faceSharpness:     sharpFace,
+            globalSharpness:   sharpCenter,
+          });
           groupScores.push({ groupId: entry.groupId, photoId: id, score: finalScore.total });
         }
       } catch {
