@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
+import UserAddress from "./UserAddress";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 폴더 재귀 읽기 유틸 (FileSystemEntry API)
@@ -129,7 +130,10 @@ export default function Upload() {
       </div>
 
       <div style={{ width: "100%", maxWidth: 600 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>{t("title")}</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
+          <UserAddress withComma style={{ color: "var(--accent)" }} />
+          {t("title")}
+        </h2>
         <p style={{ textAlign: "center", color: "var(--text2)", marginBottom: 32, fontSize: 14 }}>{t("subtitle")}</p>
 
         {/* ── 드래그앤드롭 영역 ── */}

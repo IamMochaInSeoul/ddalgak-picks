@@ -7,11 +7,14 @@ import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
+import NicknameCaptureModal from "./NicknameCaptureModal";
+import UserAddress from "./UserAddress";
 import { applyWatermark } from "../lib/watermark";
 import { assignDisplayNames, zipFilename } from "../lib/displayName";
 import { showToast } from "./Toast";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
+import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
@@ -75,6 +78,7 @@ export default function Gallery() {
   const [exported, setExported] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(() => shouldShowNicknameModal());
   const [showPanel, setShowPanel] = useState(false);
   const [reextracting, setReextracting] = useState(false);
   const [reextractDoneCount, setReextractDoneCount] = useState<number | null>(null);
@@ -209,7 +213,9 @@ export default function Gallery() {
       a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
       URL.revokeObjectURL(url);
       setExported(true);
-      showToast(`${photosToExport.length}장 ZIP 저장 완료.`, "✓");
+      const { nickname, honorific } = loadProfile();
+      const namePrefix = nickname ? `${nickname}${honorific ?? "님"}, ` : "";
+      showToast(`${namePrefix}${photosToExport.length}장 ZIP 저장 완료.`, "✓");
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
   }, [selectedPhotos, isPaid, freeZipLimit, watermarkEnabled]);
@@ -579,6 +585,7 @@ export default function Gallery() {
         borderTop: "1px solid var(--border)", padding: "12px 24px",
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div>
+          <UserAddress withComma style={{ fontWeight: 700, fontSize: 16 }} />
           <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedPhotos.length}</span>
           <span style={{ color: "var(--text2)", fontSize: 14 }}>장 선택됨</span>
           {!isPaid && selectedPhotos.length > freeZipLimit && (
@@ -610,6 +617,11 @@ export default function Gallery() {
           onClose={() => setShowPaymentGate(false)}
           onSuccess={() => { setShowPaymentGate(false); handleExport(); }}
         />
+      )}
+
+      {/* Nickname capture modal */}
+      {showNicknameModal && (
+        <NicknameCaptureModal onClose={() => setShowNicknameModal(false)} />
       )}
 
       {/* Photo modal */}

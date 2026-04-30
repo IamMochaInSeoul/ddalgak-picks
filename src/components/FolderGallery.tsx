@@ -23,6 +23,9 @@ import {
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import MonoNumber from "./MonoNumber";
+import NicknameCaptureModal from "./NicknameCaptureModal";
+import UserAddress from "./UserAddress";
+import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { applyWatermark } from "../lib/watermark";
 import {
   savePastSelections,
@@ -74,6 +77,7 @@ export default function FolderGallery() {
   const [exporting, setExporting]       = useState(false);
   const [exported, setExported]         = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
 
   // 중복 정보: folderSessionId → Map<photoId, DupeMatch>
   const [dupeMap, setDupeMap] = useState<Map<string, Map<string, DupeMatch>>>(new Map());
@@ -93,6 +97,7 @@ export default function FolderGallery() {
     (async () => {
       // 과거 지문 한 번만 로드
       const pastRecords = await loadPastHashes().catch(() => []);
+      const completedResults: Awaited<ReturnType<typeof analyzePhotos>>[] = [];
 
       for (const session of folderSessions) {
         if (session.status !== "pending") continue;
@@ -115,6 +120,7 @@ export default function FolderGallery() {
             maxPerGroup
           );
 
+          completedResults.push(result);
           sessionClusters.current.push(result.personClusters);
           updateSession(session.id, {
             status: "done",
@@ -143,6 +149,14 @@ export default function FolderGallery() {
             errorMessage: err instanceof Error ? err.message : "알 수 없는 오류",
           });
         }
+      }
+
+      // 세션 통계 기록 (닉네임 캡처 모달 트리거 포함)
+      {
+        const processed = completedResults.reduce((sum, r) => sum + r.photos.size, 0);
+        const selected  = completedResults.reduce((sum, r) => sum + [...r.photos.values()].filter((p) => p.isSelected).length, 0);
+        recordSession({ processed, selected, flow: (flow === "B" || flow === "C") ? flow : "C" });
+        if (shouldShowNicknameModal()) setShowNicknameModal(true);
       }
 
       // 인물 클러스터 병합
@@ -238,6 +252,14 @@ export default function FolderGallery() {
 
       // 지문 저장 (비동기, 실패해도 무시)
       savePastSelections(toSave, sessionId).catch(() => {});
+
+      // ZIP 완료 토스트 (닉네임 있으면 포함)
+      {
+        const { nickname, honorific } = loadProfile();
+        const namePrefix = nickname ? `${nickname}${honorific ?? "님"}, ` : "";
+        const count = folderSessions.reduce((sum, s) => sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0);
+        console.info(`[ddalgak] ${namePrefix}${count}장 ZIP 저장 완료.`);
+      }
     } catch (err) {
       console.error("[FolderGallery] ZIP 생성 실패:", err);
     } finally {
@@ -612,6 +634,11 @@ export default function FolderGallery() {
           onClose={() => setShowPaymentGate(false)}
           onSuccess={() => { setShowPaymentGate(false); handleExport(); }}
         />
+      )}
+
+      {/* Nickname capture modal */}
+      {showNicknameModal && (
+        <NicknameCaptureModal onClose={() => setShowNicknameModal(false)} />
       )}
     </div>
   );
