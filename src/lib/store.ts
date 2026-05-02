@@ -119,7 +119,8 @@ const initialState: AppState = {
 
   // v3.0 신규 — 결제 / 광고
   payment: { isPaid: false },
-  watermarkEnabled: true,
+  // 결제 기능 비활성 시 무료 베타 모드 — 워터마크 없음
+  watermarkEnabled: import.meta.env.VITE_FEATURE_PAYMENT === "true",
   freeZipLimit: 50,
   adImpressions: [],
 

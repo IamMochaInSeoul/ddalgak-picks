@@ -120,8 +120,10 @@ export default function AppShell() {
     setRecoveryData(null);
   }
 
+  const betaH = import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingTop: betaH }}>
       {/* ── 세션 복구 배너 ── */}
       {recoveryChecked && recoveryData && step === "landing" && (
         <div style={{
@@ -163,6 +165,19 @@ export default function AppShell() {
               새로 시작
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 무료 베타 배너 — VITE_FEATURE_PAYMENT 꺼져있을 때만 표시 */}
+      {import.meta.env.VITE_FEATURE_PAYMENT !== "true" && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "linear-gradient(90deg, #16a34a, #15803d)",
+          color: "#fff", textAlign: "center",
+          fontSize: 12, fontWeight: 600, padding: "5px 12px",
+          letterSpacing: "0.02em",
+        }}>
+          🎉 딸깍픽스 무료 베타 서비스 중 — 모든 기능을 무료로 이용하세요
         </div>
       )}
 

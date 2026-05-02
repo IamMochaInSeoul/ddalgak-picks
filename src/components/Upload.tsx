@@ -188,7 +188,7 @@ export default function Upload() {
       alignItems: "center", justifyContent: "center", padding: "24px", background: "var(--bg)" }}>
 
       {/* 헤더 */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex",
+      <div style={{ position: "fixed", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, left: 0, right: 0, display: "flex",
         justifyContent: "space-between", alignItems: "center", padding: "16px 24px",
         borderBottom: "1px solid var(--border)", background: "var(--bg)", zIndex: 100 }}>
         <SecondaryButton style={{ padding: "0 14px", height: 34, fontSize: 13 }}

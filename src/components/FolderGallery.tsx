@@ -206,8 +206,8 @@ export default function FolderGallery() {
       if (sessionClusters.current.length > 0) {
         const merged = mergePersonClusters(sessionClusters.current);
         setPersonClusters(merged);
-        const clusteringOn = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "true";
-        if (clusteringOn && merged.size > 0) {
+        // 인물이 2명 이상 감지되면 주인공 선택 화면으로 (항상 활성)
+        if (merged.size >= 2) {
           setStep("personSelect");
         }
       }
@@ -310,7 +310,8 @@ export default function FolderGallery() {
     const selCount = folderSessions.reduce((sum, s) =>
       sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0);
 
-    if (!isPaid && selCount > freeZipLimit) {
+    const paymentEnabled = import.meta.env.VITE_FEATURE_PAYMENT === "true";
+    if (paymentEnabled && !isPaid && selCount > freeZipLimit) {
       setShowPaymentGate(true);
       return;
     }
@@ -440,7 +441,7 @@ export default function FolderGallery() {
 
       {/* ── 헤더 ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 100,
+        position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 24px",
         borderBottom: "1px solid var(--border)",

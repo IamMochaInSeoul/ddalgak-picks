@@ -342,7 +342,7 @@ export default function FolderUpload() {
 
       {/* ── 헤더 ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 100,
+        position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 24px",
         borderBottom: "1px solid var(--border)",
