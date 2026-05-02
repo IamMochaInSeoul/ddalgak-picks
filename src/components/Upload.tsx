@@ -4,6 +4,7 @@ import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import UserAddress from "./UserAddress";
 import { PrimaryButton, SecondaryButton } from "./ui";
+import { isDriveAvailable, getGoogleAccessToken, openDrivePicker, listDriveFolder } from "../lib/googleDrive";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 폴더 재귀 읽기 유틸 (FileSystemEntry API)
@@ -53,6 +54,9 @@ export default function Upload() {
   const [dragging, setDragging] = useState(false);
   const [loadingFolder, setLoadingFolder] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveProgress, setDriveProgress] = useState({ current: 0, total: 0, label: "" });
+  const driveTokenRef = useRef<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +111,50 @@ export default function Upload() {
     }
   }, [handleFiles]);
 
+  // ── Google Drive 가져오기 ──
+  const handleDriveImport = useCallback(async () => {
+    setDriveLoading(true);
+    try {
+      let token = driveTokenRef.current;
+      if (!token) {
+        token = await getGoogleAccessToken();
+        driveTokenRef.current = token;
+      }
+      const picked = await openDrivePicker(token);
+      let items: Awaited<ReturnType<typeof listDriveFolder>> = [];
+      let label = "Google Drive";
+      if (picked.type === "folder") {
+        label = picked.name ?? "Google Drive";
+        setDriveProgress({ current: 0, total: 0, label: `${label} 파일 목록 조회 중...` });
+        items = await listDriveFolder(picked.id, token);
+      } else if (picked.type === "files") {
+        items = picked.items;
+      }
+      if (items.length === 0) return;
+      setDriveProgress({ current: 0, total: items.length, label });
+      const downloaded: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        try {
+          const item = items[i];
+          const res = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${item.id}?alt=media`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          downloaded.push(new File([blob], item.name, { type: blob.type }));
+        } catch { /* skip failed file */ }
+        setDriveProgress({ current: i + 1, total: items.length, label });
+      }
+      handleFiles(downloaded);
+    } catch (err) {
+      console.error("[Upload] Drive import failed:", err);
+    } finally {
+      setDriveLoading(false);
+      setDriveProgress({ current: 0, total: 0, label: "" });
+    }
+  }, [handleFiles]);
+
   // ── 분석 시작 ──
   const startAnalysis = () => {
     if (files.length === 0) return;
@@ -114,7 +162,7 @@ export default function Upload() {
     setStep("analysis");
   };
 
-  const isReady = files.length > 0 && targetCount >= 1 && !loadingFolder;
+  const isReady = files.length > 0 && targetCount >= 1 && !loadingFolder && !driveLoading;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column",
@@ -176,25 +224,50 @@ export default function Upload() {
           )}
         </div>
 
-        {/* ── 업로드 버튼 2종 ── */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+        {/* ── 업로드 버튼 ── */}
+        <div style={{ display: "flex", gap: 10, marginBottom: isDriveAvailable() ? 10 : 24, flexWrap: "wrap" }}>
           <button
             className="btn-secondary"
-            style={{ flex: 1, fontSize: 14, padding: "10px 0" }}
-            disabled={loadingFolder}
+            style={{ flex: 1, fontSize: 14, padding: "10px 0", minWidth: 120 }}
+            disabled={loadingFolder || driveLoading}
             onClick={() => fileInputRef.current?.click()}
           >
             🖼 사진 파일 선택
           </button>
           <button
             className="btn-secondary"
-            style={{ flex: 1, fontSize: 14, padding: "10px 0" }}
-            disabled={loadingFolder}
+            style={{ flex: 1, fontSize: 14, padding: "10px 0", minWidth: 120 }}
+            disabled={loadingFolder || driveLoading}
             onClick={() => folderInputRef.current?.click()}
           >
             📁 폴더째 선택
           </button>
         </div>
+
+        {/* ── Google Drive 버튼 ── */}
+        {isDriveAvailable() && (
+          <button
+            className="btn-secondary"
+            style={{
+              width: "100%", fontSize: 14, padding: "11px 0", marginBottom: 24,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+            disabled={loadingFolder || driveLoading}
+            onClick={handleDriveImport}
+          >
+            <svg width="18" height="18" viewBox="0 0 87.3 78" fill="none">
+              <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29.4 48H0c0 1.55.4 3.1 1.2 4.5L6.6 66.85z" fill="#0066DA"/>
+              <path d="M43.65 25L29.4 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.5C.4 44.9 0 46.45 0 48h29.4l14.25-23z" fill="#00AC47"/>
+              <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H57.9l6.2 11.9 9.45 11.9z" fill="#EA4335"/>
+              <path d="M43.65 25L57.9 48h29.4c0-1.55-.4-3.1-1.2-4.5L61.55 3.3c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25z" fill="#00832D"/>
+              <path d="M57.9 48H29.4L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2L57.9 48z" fill="#2684FC"/>
+              <path d="M73.4 24L58.25 3.3c-.8-1.4-1.95-2.5-3.3-3.3H32.35c-1.35.8-2.5 1.9-3.3 3.3L43.65 25l13.95-1 15.8 0z" fill="#FFBA00"/>
+            </svg>
+            {driveLoading
+              ? `Drive 가져오는 중... (${driveProgress.current}/${driveProgress.total || "?"})`
+              : "Google Drive에서 가져오기"}
+          </button>
+        )}
 
         {/* 숨긴 input들 */}
         <input ref={fileInputRef} type="file" multiple

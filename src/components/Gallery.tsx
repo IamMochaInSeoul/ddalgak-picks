@@ -80,6 +80,7 @@ export default function Gallery() {
   const heroConfig = useStore((s) => s.heroConfig);
 
   const [exporting, setExporting] = useState(false);
+  const [zipPercent, setZipPercent] = useState(0);
   const [exported, setExported] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
@@ -213,15 +214,20 @@ export default function Gallery() {
           folder.file(zipFilename(photo, false), buf);
         }
       }
-      const blob = await zip.generateAsync({ type: "blob" });
+      setZipPercent(0);
+      const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
+        setZipPercent(Math.round(meta.percent));
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
       URL.revokeObjectURL(url);
       setExported(true);
+      setZipPercent(0);
       const { nickname, honorific } = loadProfile();
       const namePrefix = nickname ? `${nickname}${honorific ?? "님"}, ` : "";
-      showToast(`${namePrefix}${photosToExport.length}장 ZIP 저장 완료.`, "✓");
+      const sizeMB = (blob.size / 1024 / 1024).toFixed(0);
+      showToast(`${namePrefix}${photosToExport.length}장 · ${sizeMB}MB ZIP 저장 완료`, "✓");
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
   }, [selectedPhotos, isPaid, freeZipLimit, watermarkEnabled]);
@@ -630,7 +636,8 @@ export default function Gallery() {
           </button>
           <button className="btn-primary" style={{ fontSize: 14, padding: "10px 24px" }}
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
-            {exporting ? tExport("downloading")
+            {exporting
+              ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : tExport("downloading"))
               : !isPaid && selectedPhotos.length > freeZipLimit
                 ? `전체 다운로드 (${selectedPhotos.length}장)`
                 : `ZIP 다운로드 (${selectedPhotos.length}장)`}

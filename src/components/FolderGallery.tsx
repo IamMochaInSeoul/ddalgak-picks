@@ -82,6 +82,7 @@ export default function FolderGallery() {
   const [activeTab, setActiveTab]       = useState(0);
   const [galleryView, setGalleryView]   = useState<GalleryView>("selected");
   const [exporting, setExporting]       = useState(false);
+  const [zipPercent, setZipPercent]     = useState(0);
   const [exported, setExported]         = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
@@ -249,7 +250,10 @@ export default function FolderGallery() {
         }
       }
 
-      const blob = await zip.generateAsync({ type: "blob" });
+      setZipPercent(0);
+      const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
+        setZipPercent(Math.round(meta.percent));
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -257,6 +261,7 @@ export default function FolderGallery() {
       a.click();
       URL.revokeObjectURL(url);
       setExported(true);
+      setZipPercent(0);
 
       // 지문 저장 (비동기, 실패해도 무시)
       savePastSelections(toSave, sessionId).catch(() => {});
@@ -353,7 +358,7 @@ export default function FolderGallery() {
               onClick={handleExport}
               disabled={exporting}
             >
-              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
+              {exporting ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…") : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
             </button>
           )}
           <LangToggle />
@@ -677,7 +682,7 @@ export default function FolderGallery() {
               onClick={handleExport}
               disabled={exporting || totalSelected === 0}
             >
-              {exporting ? "ZIP 생성 중…" : exported ? "✓ 완료." : "ZIP 저장"}
+              {exporting ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…") : exported ? "✓ 완료." : "ZIP 저장"}
             </button>
             {flow === "B" && (
               <button
