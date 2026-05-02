@@ -4,7 +4,14 @@ import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import UserAddress from "./UserAddress";
 import { PrimaryButton, SecondaryButton } from "./ui";
-import { isDriveAvailable, getGoogleAccessToken, openDrivePicker, listDriveFolder } from "../lib/googleDrive";
+import {
+  isDriveAvailable,
+  getGoogleAccessToken,
+  openDrivePicker,
+  listDriveFolder,
+  downloadDriveThumbnail,
+  downloadDriveOriginal,
+} from "../lib/googleDrive";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 폴더 재귀 읽기 유틸 (FileSystemEntry API)
@@ -48,7 +55,12 @@ export default function Upload() {
   const setTargetCount = useStore((s) => s.setTargetCount);
   const maxPerGroup = useStore((s) => s.maxPerGroup);
   const setMaxPerGroup = useStore((s) => s.setMaxPerGroup);
-  const setStep = useStore((s) => s.setStep);
+  const setStep           = useStore((s) => s.setStep);
+  const addDriveQueueItem    = useStore((s) => s.addDriveQueueItem);
+  const updateDriveQueueItem = useStore((s) => s.updateDriveQueueItem);
+  const removeDriveQueueItem = useStore((s) => s.removeDriveQueueItem);
+  const globalDriveToken     = useStore((s) => s.driveToken);
+  const setDriveToken        = useStore((s) => s.setDriveToken);
 
   const [files, setFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -56,7 +68,7 @@ export default function Upload() {
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveProgress, setDriveProgress] = useState({ current: 0, total: 0, label: "" });
-  const driveTokenRef = useRef<string | null>(null);
+  const driveTokenRef = useRef<string | null>(globalDriveToken);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -111,18 +123,22 @@ export default function Upload() {
     }
   }, [handleFiles]);
 
-  // ── Google Drive 가져오기 ──
+  // ── Google Drive 가져오기 (§16 단계화: 썸네일 우선, driveQueue로 전역 배너 연동) ──
   const handleDriveImport = useCallback(async () => {
     setDriveLoading(true);
+    const qid = `drive-a-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     try {
+      // §16 LOW — 전역 토큰 캐시 재사용
       let token = driveTokenRef.current;
       if (!token) {
         token = await getGoogleAccessToken();
         driveTokenRef.current = token;
+        setDriveToken(token);
       }
       const picked = await openDrivePicker(token);
       let items: Awaited<ReturnType<typeof listDriveFolder>> = [];
       let label = "Google Drive";
+
       if (picked.type === "folder") {
         label = picked.name ?? "Google Drive";
         setDriveProgress({ current: 0, total: 0, label: `${label} 파일 목록 조회 중...` });
@@ -131,29 +147,32 @@ export default function Upload() {
         items = picked.items;
       }
       if (items.length === 0) return;
+
+      // §16 MEDIUM — driveQueue 등록 → DriveDownloadBanner가 Flow A에서도 표시됨
+      addDriveQueueItem({ id: qid, folderName: label, status: "downloading", current: 0, total: items.length });
       setDriveProgress({ current: 0, total: items.length, label });
+
       const downloaded: File[] = [];
       for (let i = 0; i < items.length; i++) {
         try {
-          const item = items[i];
-          const res = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${item.id}?alt=media`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!res.ok) continue;
-          const blob = await res.blob();
-          downloaded.push(new File([blob], item.name, { type: blob.type }));
+          // §16 HIGH — 썸네일(800px) 우선, 미처리 파일은 원본 폴백
+          const thumb = await downloadDriveThumbnail(items[i], token);
+          downloaded.push(thumb ?? await downloadDriveOriginal(items[i], token));
         } catch { /* skip failed file */ }
         setDriveProgress({ current: i + 1, total: items.length, label });
+        updateDriveQueueItem(qid, { current: i + 1 });
       }
+      updateDriveQueueItem(qid, { status: "done" });
+      setTimeout(() => removeDriveQueueItem(qid), 3000);
       handleFiles(downloaded);
     } catch (err) {
+      updateDriveQueueItem(qid, { status: "error", errorMsg: err instanceof Error ? err.message : "오류" });
       console.error("[Upload] Drive import failed:", err);
     } finally {
       setDriveLoading(false);
       setDriveProgress({ current: 0, total: 0, label: "" });
     }
-  }, [handleFiles]);
+  }, [handleFiles, addDriveQueueItem, updateDriveQueueItem, removeDriveQueueItem, setDriveToken]);
 
   // ── 분석 시작 ──
   const startAnalysis = () => {

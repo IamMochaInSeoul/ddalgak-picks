@@ -292,6 +292,14 @@ export interface FolderSession {
   source: "local" | "google_drive";   // Drive 연동 여부 (§16.3)
   driveFolderId?: string;
   driveFolderPath?: string;            // 사용자에게 표시할 경로
+  // §16 단계화 다운로드: listDriveFolder 응답 보존 → 분석 후 PhotoEntry에 주입
+  driveItems?: Array<{
+    id: string;
+    name: string;
+    thumbnailLink?: string;
+    hasThumbnail?: boolean;
+    size?: string;
+  }>;
   recommendedCount?: number;
   outfitChangePoints?: string[];
   storyTelling?: StorySnapshot[];
@@ -361,4 +369,7 @@ export interface AppState {
   // ── v3.0 신규 — 인물 클러스터링 ──
   personClusters: Map<string, PersonCluster>;
   heroConfig: HeroConfig;
+
+  // §16 — Drive 토큰 전역 캐시 (화면 이동 후에도 재동의 없이 재사용)
+  driveToken: string | null;
 }

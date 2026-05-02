@@ -35,6 +35,7 @@ import {
   clearOldHashes,
 } from "../lib/pastSelectionStore";
 import { findPastDupes, type DupeMatch } from "../lib/dedupe";
+import { downloadDriveOriginal, getGoogleAccessToken } from "../lib/googleDrive";
 
 // ── 분석 단계 레이블 ────────────────────────────────────────────────────────
 const STAGE_LABELS: Record<string, string> = {
@@ -74,6 +75,8 @@ export default function FolderGallery() {
   const setPersonClusters = useStore((s) => s.setPersonClusters);
 
   const isPaid           = useStore((s) => s.payment.isPaid);
+  const driveToken       = useStore((s) => s.driveToken);
+  const setDriveToken    = useStore((s) => s.setDriveToken);
   const watermarkEnabled = useStore((s) => s.watermarkEnabled);
   const freeZipLimit     = useStore((s) => s.freeZipLimit);
   const personClusters   = useStore((s) => s.personClusters);
@@ -81,8 +84,10 @@ export default function FolderGallery() {
 
   const [activeTab, setActiveTab]       = useState(0);
   const [galleryView, setGalleryView]   = useState<GalleryView>("selected");
-  const [exporting, setExporting]       = useState(false);
-  const [zipPercent, setZipPercent]     = useState(0);
+  const [exporting, setExporting]          = useState(false);
+  const [zipPercent, setZipPercent]        = useState(0);
+  const [fetchingOriginals, setFetchingOriginals] = useState(false);
+  const [origFetchProgress, setOrigFetchProgress] = useState({ current: 0, total: 0 });
   const [exported, setExported]         = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
@@ -131,11 +136,40 @@ export default function FolderGallery() {
 
           completedResults.push(result);
           sessionClusters.current.push(result.personClusters);
+
+          // §16 HIGH — Drive 소스 세션: 분석 후 PhotoEntry에 driveFileId 등 주입
+          let enrichedPhotos = result.photos;
+          if (session.source === "google_drive" && session.driveItems && session.driveItems.length > 0) {
+            const driveByName = new Map(session.driveItems.map((it) => [it.name, it]));
+            enrichedPhotos = new Map(
+              [...result.photos.entries()].map(([pid, photo]) => {
+                const driveItem = driveByName.get(photo.file?.name ?? "");
+                if (!driveItem) return [pid, photo];
+                return [pid, {
+                  ...photo,
+                  driveFileId: driveItem.id,
+                  driveThumbnailUrl: driveItem.thumbnailLink,
+                  driveOriginalUrl: `https://www.googleapis.com/drive/v3/files/${driveItem.id}?alt=media`,
+                  isOriginalDownloaded: false,
+                }];
+              }),
+            );
+            // 썸네일 분석 절감량 토스트
+            const totalOrigBytes = session.driveItems.reduce(
+              (s, it) => s + parseInt(it.size ?? "0", 10), 0,
+            );
+            if (totalOrigBytes > 0) {
+              const savedMB = (totalOrigBytes / 1024 / 1024).toFixed(1);
+              const thumbed = [...enrichedPhotos.values()].filter((p) => p.driveFileId && !p.isOriginalDownloaded).length;
+              showToast(`☁ Drive 썸네일 분석 완료 — 원본 ${savedMB}MB (${thumbed}장) 절약`, "✅");
+            }
+          }
+
           updateSession(session.id, {
             status: "done",
             progress: 1,
             stage: "done",
-            photos: result.photos,
+            photos: enrichedPhotos,
             groups: result.groups,
           });
 
@@ -205,9 +239,73 @@ export default function FolderGallery() {
     });
   }, [updateSession]);
 
+  // ── §16 원본 다운로드 훅 — ZIP 확정 전 Drive 썸네일 사진의 원본 획득 ────────
+  const fetchDriveOriginals = useCallback(async (): Promise<boolean> => {
+    // 선택된 Drive 사진 중 원본 미다운로드 목록
+    const pending: Array<{ sessionId: string; photo: PhotoEntry }> = [];
+    for (const session of folderSessions) {
+      if (session.source !== "google_drive" || session.status !== "done") continue;
+      for (const photo of session.photos.values()) {
+        if (photo.isSelected && photo.driveFileId && !photo.isOriginalDownloaded) {
+          pending.push({ sessionId: session.id, photo });
+        }
+      }
+    }
+    if (pending.length === 0) return true;
+
+    // 토큰 확보 (전역 캐시 → 만료 시 재발급)
+    let token = driveToken;
+    try {
+      if (!token) {
+        token = await getGoogleAccessToken();
+        setDriveToken(token);
+      }
+    } catch {
+      showToast("Drive 인증 실패 — 썸네일로 ZIP을 생성합니다", "⚠️");
+      return false;
+    }
+
+    setFetchingOriginals(true);
+    setOrigFetchProgress({ current: 0, total: pending.length });
+
+    let success = 0;
+    for (let i = 0; i < pending.length; i++) {
+      const { sessionId, photo } = pending[i];
+      try {
+        const origFile = await downloadDriveOriginal(
+          { id: photo.driveFileId!, name: photo.file?.name ?? photo.driveFileId!, mimeType: photo.file?.type ?? "image/jpeg" },
+          token!,
+        );
+        // 세션 photos 갱신
+        const session = folderSessions.find((s) => s.id === sessionId);
+        if (session) {
+          updateSession(sessionId, {
+            photos: new Map(
+              [...session.photos.entries()].map(([pid, p]) =>
+                pid === photo.id
+                  ? [pid, { ...p, file: origFile, isOriginalDownloaded: true }]
+                  : [pid, p]
+              ),
+            ),
+          });
+        }
+        success++;
+      } catch {
+        // 실패 시 기존 썸네일로 폴백 (ZIP에 포함됨)
+      }
+      setOrigFetchProgress({ current: i + 1, total: pending.length });
+    }
+
+    setFetchingOriginals(false);
+    if (success < pending.length) {
+      showToast(`원본 ${pending.length - success}장 다운로드 실패 — 썸네일로 대체됩니다`, "⚠️");
+    }
+    return true;
+  }, [folderSessions, driveToken, setDriveToken, updateSession]);
+
   // ── ZIP 내보내기 ───────────────────────────────────────────────────────────
   const handleExport = useCallback(async () => {
-    if (exporting) return;
+    if (exporting || fetchingOriginals) return;
 
     const selCount = folderSessions.reduce((sum, s) =>
       sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0);
@@ -216,6 +314,9 @@ export default function FolderGallery() {
       setShowPaymentGate(true);
       return;
     }
+
+    // §16 — Drive 원본 받기 훅 (선택 확정 시점)
+    await fetchDriveOriginals();
 
     setExporting(true);
     setExported(false);
@@ -283,7 +384,7 @@ export default function FolderGallery() {
     } finally {
       setExporting(false);
     }
-  }, [folderSessions, exporting, isPaid, watermarkEnabled, freeZipLimit]);
+  }, [folderSessions, exporting, fetchingOriginals, isPaid, watermarkEnabled, freeZipLimit, fetchDriveOriginals]);
 
   // ── 현재 탭 세션 ──────────────────────────────────────────────────────────
   const activeSession = folderSessions[activeTab] as FolderSession | undefined;
@@ -356,9 +457,13 @@ export default function FolderGallery() {
               className="btn-primary"
               style={{ fontSize: 13, padding: "7px 16px" }}
               onClick={handleExport}
-              disabled={exporting}
+              disabled={exporting || fetchingOriginals}
             >
-              {exporting ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…") : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
+              {fetchingOriginals
+                ? `원본 받는 중... ${origFetchProgress.current}/${origFetchProgress.total}`
+                : exporting
+                  ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…")
+                  : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
             </button>
           )}
           <LangToggle />
@@ -680,9 +785,13 @@ export default function FolderGallery() {
               className="btn-secondary"
               style={{ fontSize: 13, padding: "9px 18px" }}
               onClick={handleExport}
-              disabled={exporting || totalSelected === 0}
+              disabled={exporting || fetchingOriginals || totalSelected === 0}
             >
-              {exporting ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…") : exported ? "✓ 완료." : "ZIP 저장"}
+              {fetchingOriginals
+                ? `원본 받는 중... ${origFetchProgress.current}/${origFetchProgress.total}`
+                : exporting
+                  ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…")
+                  : exported ? "✓ 완료." : "ZIP 저장"}
             </button>
             {flow === "B" && (
               <button
