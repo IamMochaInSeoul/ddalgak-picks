@@ -237,6 +237,8 @@ export interface PhotoEntry {
   faces?: FaceFeature[];
   presentPersonIds?: string[];
   primaryPersonId?: string;
+  primaryPersonBbox?: BBox | null;       // v3.0 — 가장 큰 인물의 bbox
+  isLookingAtCamera?: boolean;           // v3.0 — 주인공 응시 여부
   heroMatchKind?: "all" | "any" | "none" | "non_hero_guaranteed";
   heroBonus?: number;
   exclusionReasons?: ExclusionReason[];

@@ -31,6 +31,8 @@ export async function requestPayment(
     currency: "KRW",
     payMethod: "EASY_PAY",
     customer: { email },
+    // PortOne SDK 타입 quirk: alipayPlus는 required이나 모든 하위 필드가 optional
+    alipayPlus: {},
   });
 
   if (response?.code) {
