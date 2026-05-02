@@ -7,19 +7,25 @@ import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
+import NicknameCaptureModal from "./NicknameCaptureModal";
+import UserAddress from "./UserAddress";
+import GroupCompareModal from "./GroupCompareModal";
 import { applyWatermark } from "../lib/watermark";
 import { assignDisplayNames, zipFilename } from "../lib/displayName";
 import { showToast } from "./Toast";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
+import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
-  { key: "eye",       label: "눈 감음",        emoji: "😑", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
-  { key: "blur",      label: "흔들림·초점",    emoji: "💫", codes: ["BLUR"] },
-  { key: "side",      label: "측면 얼굴",      emoji: "↩️", codes: ["SIDE_FACE"] },
-  { key: "noface",    label: "인물 감지 불가", emoji: "🔍", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
-  { key: "other",     label: "기타 제외",      emoji: "📋", codes: [] },   // catch-all
+  { key: "eye",    label: "눈 감음",        emoji: "😑", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
+  { key: "blur",   label: "흔들림·초점",    emoji: "💫", codes: ["BLUR", "BLUR_NOISE"] },
+  { key: "side",   label: "측면 얼굴",      emoji: "↩️", codes: ["SIDE_FACE"] },
+  { key: "noface", label: "인물 감지 불가", emoji: "🔍", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
+  { key: "other",  label: "기타 제외",      emoji: "📋", codes: [] },   // catch-all
+  // Info-only codes (not shown in exclusion tabs)
+  // EYE_SQUINT_SMILE, BLUR_AESTHETIC_BOKEH — no exclusion, informational only
 ];
 
 function getExclusionGroupKey(deductions: string[]): string {
@@ -75,6 +81,7 @@ export default function Gallery() {
   const [exported, setExported] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(() => shouldShowNicknameModal());
   const [showPanel, setShowPanel] = useState(false);
   const [reextracting, setReextracting] = useState(false);
   const [reextractDoneCount, setReextractDoneCount] = useState<number | null>(null);
@@ -92,6 +99,7 @@ export default function Gallery() {
 
   // Modal state
   const [modalPhotoId, setModalPhotoId] = useState<string | null>(null);
+  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   // Context menu state
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; photoId: string } | null>(null);
@@ -209,7 +217,9 @@ export default function Gallery() {
       a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
       URL.revokeObjectURL(url);
       setExported(true);
-      showToast(`${photosToExport.length}장 ZIP 저장 완료.`, "✓");
+      const { nickname, honorific } = loadProfile();
+      const namePrefix = nickname ? `${nickname}${honorific ?? "님"}, ` : "";
+      showToast(`${namePrefix}${photosToExport.length}장 ZIP 저장 완료.`, "✓");
     } catch (err) { console.error(err); }
     finally { setExporting(false); }
   }, [selectedPhotos, isPaid, freeZipLimit, watermarkEnabled]);
@@ -553,6 +563,16 @@ export default function Gallery() {
                         {selectedEntry && <span className="badge" style={{ borderColor: "var(--accent)", color: "var(--accent2)" }}>선택됨</span>}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCompareGroupId(group.id); }}
+                      style={{
+                        padding: "5px 10px", fontSize: 11, fontWeight: 600,
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6, cursor: "pointer",
+                        color: "var(--text-secondary)",
+                      }}
+                    >비교</button>
                     <span style={{ color: "var(--text2)", fontSize: 18 }}>{isExpanded ? "▲" : "▼"}</span>
                   </div>
                   {isExpanded && (
@@ -579,6 +599,7 @@ export default function Gallery() {
         borderTop: "1px solid var(--border)", padding: "12px 24px",
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div>
+          <UserAddress withComma style={{ fontWeight: 700, fontSize: 16 }} />
           <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedPhotos.length}</span>
           <span style={{ color: "var(--text2)", fontSize: 14 }}>장 선택됨</span>
           {!isPaid && selectedPhotos.length > freeZipLimit && (
@@ -611,6 +632,24 @@ export default function Gallery() {
           onSuccess={() => { setShowPaymentGate(false); handleExport(); }}
         />
       )}
+
+      {/* Nickname capture modal */}
+      {showNicknameModal && (
+        <NicknameCaptureModal onClose={() => setShowNicknameModal(false)} />
+      )}
+
+      {/* Group compare modal */}
+      {compareGroupId && (() => {
+        const grp = groups.find((g) => g.id === compareGroupId);
+        return grp ? (
+          <GroupCompareModal
+            group={grp}
+            photos={photos}
+            onSwap={(gid, pid) => setGroupSelected(gid, pid)}
+            onClose={() => setCompareGroupId(null)}
+          />
+        ) : null;
+      })()}
 
       {/* Photo modal */}
       {modalPhoto && (

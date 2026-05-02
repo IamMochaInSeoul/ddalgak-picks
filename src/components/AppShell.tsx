@@ -20,6 +20,7 @@ import {
   clearSession,
   type PersistedSession,
 } from "../lib/sessionPersist";
+import UserAddress from "./UserAddress";
 
 /** 3초 디바운스 저장 */
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number) {
@@ -134,7 +135,7 @@ export default function AppShell() {
           padding: "16px 20px",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-            💾 이전 작업이 남아있어요
+            <UserAddress withComma />이전 작업이 남아있어요
           </div>
           <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14, lineHeight: 1.6 }}>
             {new Date(recoveryData.savedAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} 저장

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { analyzePhotos, serializeError } from "../lib/analyzer";
+import { recordSession } from "../lib/userProfile";
 import MonoNumber from "./MonoNumber";
+import UserAddress from "./UserAddress";
 
 // ── 단계별 스토리텔링 메시지 (큐레이터 톤 — 이모지·느낌표 없음) ──────────
 const STAGE_STORIES: Record<string, string[]> = {
@@ -101,6 +103,10 @@ export default function Analysis() {
         setGroups(groups);
         setGroupScoresWithScene(groupScoresWithScene);
         setPersonClusters(personClusters);
+        // 세션 통계 기록 (닉네임 캡처 모달 트리거 포함)
+        const allPhotos = [...photos.values()];
+        const selectedCount = allPhotos.filter((p) => p.isSelected).length;
+        recordSession({ processed: allPhotos.length, selected: selectedCount, flow: "A" });
         const clusteringOn = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "true";
         setStep(clusteringOn && personClusters.size > 0 ? "personSelect" : "gallery");
       })
@@ -147,6 +153,13 @@ export default function Analysis() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center", padding: "24px", background: "var(--bg)" }}>
       <div style={{ textAlign: "center", maxWidth: 480, width: "100%" }}>
+
+        {/* 사용자 이름 인사 (닉네임 있을 때만) */}
+        <UserAddress style={{
+          display: "block", fontSize: 13, color: "var(--text-secondary)",
+          letterSpacing: "var(--tracking-uppercase)", fontFamily: "var(--font-mono)",
+          marginBottom: 16, textAlign: "center",
+        }} />
 
         {/* 진행 인디케이터 — 이모지 대신 단정한 타이포 마크 */}
         <div style={{

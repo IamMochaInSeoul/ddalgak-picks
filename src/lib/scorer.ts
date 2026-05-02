@@ -42,16 +42,62 @@ export function calcPortraitScore(
   return { eyeOpen, sharpness, expression, facing, total: Math.min(total, 1) };
 }
 
-/** Calculate deduction codes for portrait */
+/**
+ * Calculate deduction codes for portrait.
+ *
+ * F4 refinements:
+ *  - EYE_CLOSED is suppressed when the blink is a laughing squint (isLaughingSquint)
+ *    and not a genuine eye-close. EYE_SQUINT_SMILE is added for info.
+ *  - BLUR is suppressed when faceSharpness is good (≥0.5) but globalSharpness is low
+ *    (aesthetic bokeh). BLUR_AESTHETIC_BOKEH is added for info.
+ *  - BLUR_NOISE is added when noiseScore is high (>0.6) — mild penalty, not BLUR.
+ */
 export function calcPortraitDeductions(
   score: PhotoScore,
-  confidence: number
+  confidence: number,
+  extras?: {
+    isLaughingSquint?: boolean;
+    isGenuineEyeClose?: boolean;
+    faceSharpness?: number;
+    globalSharpness?: number;
+    noiseScore?: number;
+  }
 ): DeductionCode[] {
   const codes: DeductionCode[] = [];
-  if (score.eyeOpen < 0.4) codes.push("EYE_CLOSED");
-  if (score.sharpness < 0.3) codes.push("BLUR");
+
+  // ── Eye openness ──────────────────────────────────────────────────────────
+  if (score.eyeOpen < 0.4) {
+    const laughing = extras?.isLaughingSquint === true;
+    const genuine  = extras?.isGenuineEyeClose === true;
+    if (laughing && !genuine) {
+      // Big smile squint — not penalised
+      codes.push("EYE_SQUINT_SMILE");
+    } else {
+      codes.push("EYE_CLOSED");
+    }
+  }
+
+  // ── Sharpness ─────────────────────────────────────────────────────────────
+  if (score.sharpness < 0.3) {
+    const faceSharp   = extras?.faceSharpness ?? score.sharpness;
+    const globalSharp = extras?.globalSharpness ?? score.sharpness;
+    if (faceSharp >= 0.5 && globalSharp < 0.3) {
+      // Face is sharp; background bokeh — aesthetic, not a defect
+      codes.push("BLUR_AESTHETIC_BOKEH");
+    } else {
+      codes.push("BLUR");
+    }
+  }
+
+  // ── Noise ─────────────────────────────────────────────────────────────────
+  if ((extras?.noiseScore ?? 0) > 0.6) {
+    codes.push("BLUR_NOISE");
+  }
+
+  // ── Other ─────────────────────────────────────────────────────────────────
   if (score.facing < 0.4) codes.push("SIDE_FACE");
-  if (confidence < 0.6) codes.push("LOW_CONFIDENCE");
+  if (confidence < 0.6)   codes.push("LOW_CONFIDENCE");
+
   return codes;
 }
 
