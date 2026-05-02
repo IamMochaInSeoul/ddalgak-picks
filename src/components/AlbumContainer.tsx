@@ -6,15 +6,11 @@ import {
   getGoogleAccessToken as getDriveToken,
   openDrivePicker as drivePicker,
   listDriveFolder,
-  downloadDriveFile,
+  downloadDriveThumbnail,
+  downloadDriveOriginal,
+  isDriveAvailable,
   type DriveFileItem,
 } from "../lib/googleDrive";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 환경변수
-// ─────────────────────────────────────────────────────────────────────────────
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_API_KEY   = import.meta.env.VITE_GOOGLE_API_KEY;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 유틸: 썸네일 생성
@@ -351,7 +347,8 @@ export default function AlbumContainer() {
 
   // ─── Google Drive에서 가져오기 ───
   const handleGoogleDrive = useCallback(async () => {
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_API_KEY) {
+    // §16 MEDIUM — 직접 env 체크 제거, isDriveAvailable() 사용
+    if (!isDriveAvailable()) {
       setShowDriveSetup(true);
       return;
     }
@@ -383,13 +380,13 @@ export default function AlbumContainer() {
         folderName = "Google Drive";
       }
       if (items.length === 0) { setDriveLoading(false); return; }
-      // 4) 파일 다운로드
+      // 4) §16 HIGH — 썸네일(800px) 우선 다운로드, 미처리 파일은 원본 폴백
       setDriveProgress({ current: 0, total: items.length, label: folderName });
       const files: File[] = [];
       for (let i = 0; i < items.length; i++) {
         try {
-          const f = await downloadDriveFile(items[i], token);
-          files.push(f);
+          const thumb = await downloadDriveThumbnail(items[i], token);
+          files.push(thumb ?? await downloadDriveOriginal(items[i], token));
         } catch { /* skip */ }
         setDriveProgress((p) => ({ ...p, current: i + 1 }));
       }

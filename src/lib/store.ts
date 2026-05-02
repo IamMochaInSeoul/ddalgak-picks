@@ -70,6 +70,9 @@ interface AppActions {
   updateDriveQueueItem: (id: string, patch: Partial<DriveQueueItem>) => void;
   removeDriveQueueItem: (id: string) => void;
 
+  // §16 — Drive 토큰 전역 캐시
+  setDriveToken: (token: string | null) => void;
+
   // v3.0 신규 — 인물 클러스터링
   setPersonClusters: (clusters: Map<string, PersonCluster>) => void;
   upsertPersonCluster: (cluster: PersonCluster) => void;
@@ -116,13 +119,17 @@ const initialState: AppState = {
 
   // v3.0 신규 — 결제 / 광고
   payment: { isPaid: false },
-  watermarkEnabled: true,
+  // 결제 기능 비활성 시 무료 베타 모드 — 워터마크 없음
+  watermarkEnabled: import.meta.env.VITE_FEATURE_PAYMENT === "true",
   freeZipLimit: 50,
   adImpressions: [],
 
   // v3.0 신규 — 인물 클러스터링
   personClusters: new Map(),
   heroConfig: { selectedPersonIds: [], mode: "OR", guaranteeNonHeroCount: 5 },
+
+  // §16 — Drive 토큰
+  driveToken: null,
 };
 
 export const useStore = create<AppState & AppActions>((set) => ({
@@ -282,6 +289,9 @@ export const useStore = create<AppState & AppActions>((set) => ({
     })),
   removeDriveQueueItem: (id) =>
     set((s) => ({ driveQueue: s.driveQueue.filter((e) => e.id !== id) })),
+
+  // §16 — Drive 토큰 전역 캐시
+  setDriveToken: (token) => set({ driveToken: token }),
 
   // v3.0 신규 — 인물 클러스터링
   setPersonClusters: (clusters) => set({ personClusters: clusters }),

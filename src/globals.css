@@ -121,3 +121,37 @@ html, body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── 모바일 대응 (≤640px) ─────────────────────────────────────────────────
+ * 분석 후 모바일에서 인물 선택·사진 검토·ZIP 내보내기까지 완료 가능하도록.
+ * 터치 타겟 최소 44px (iOS HIG), 그리드·패딩 압축.
+ * ─────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* 터치 타겟 보장 */
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  /* 카드 패딩 축소 */
+  .card {
+    padding: 14px 14px;
+    border-radius: 10px;
+  }
+
+  /* 사진 카드 — 작은 화면에서 2열 유지 */
+  .photo-card {
+    border-radius: 4px;
+  }
+}
+
+/* ── 초소형 (≤380px) ─────────────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .btn-primary,
+  .btn-secondary {
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+}

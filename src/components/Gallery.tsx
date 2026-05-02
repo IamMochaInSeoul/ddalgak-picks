@@ -193,15 +193,18 @@ export default function Gallery() {
   }, [canReextract, reextracting, photoType, targetCount, weights, petWeights, filters, maxPerGroup,
       incrementReextract, setPhotos, setGroups, setAnalysisProgress]);
 
+  const paymentEnabled = import.meta.env.VITE_FEATURE_PAYMENT === "true";
+
   const handleExport = useCallback(async () => {
-    // 무료 사용자가 freeZipLimit 초과하면 결제 게이트 표시
-    if (!isPaid && selectedPhotos.length > freeZipLimit) {
+    // 결제 기능 활성 + 미결제 + 초과 시에만 게이트 표시
+    if (paymentEnabled && !isPaid && selectedPhotos.length > freeZipLimit) {
       setShowPaymentGate(true);
       return;
     }
     setExporting(true);
     try {
-      const photosToExport = isPaid ? selectedPhotos : selectedPhotos.slice(0, freeZipLimit);
+      // 결제 비활성(무료 베타) 또는 유료 사용자는 전량 내보내기
+      const photosToExport = (paymentEnabled && !isPaid) ? selectedPhotos.slice(0, freeZipLimit) : selectedPhotos;
       const JSZip = (await import("jszip")).default;
       const zip = new JSZip();
       const folder = zip.folder("ddalgak-picks")!;
@@ -276,7 +279,7 @@ export default function Gallery() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
       {/* Sticky header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "var(--bg)",
+      <div style={{ position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100, background: "var(--bg)",
         borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
@@ -621,7 +624,7 @@ export default function Gallery() {
           })()}
           <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedPhotos.length}</span>
           <span style={{ color: "var(--text2)", fontSize: 14 }}>장 선택됨</span>
-          {!isPaid && selectedPhotos.length > freeZipLimit && (
+          {paymentEnabled && !isPaid && selectedPhotos.length > freeZipLimit && (
             <span style={{ marginLeft: 10, fontSize: 12, color: "#f59e0b" }}>
               무료 {freeZipLimit}장 초과 — 결제 후 전체 다운로드 가능
             </span>
@@ -638,9 +641,7 @@ export default function Gallery() {
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
             {exporting
               ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : tExport("downloading"))
-              : !isPaid && selectedPhotos.length > freeZipLimit
-                ? `전체 다운로드 (${selectedPhotos.length}장)`
-                : `ZIP 다운로드 (${selectedPhotos.length}장)`}
+              : `ZIP 다운로드 (${selectedPhotos.length}장)`}
           </button>
         </div>
       </div>

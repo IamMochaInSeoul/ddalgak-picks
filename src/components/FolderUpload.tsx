@@ -23,8 +23,10 @@ import {
   getGoogleAccessToken,
   openDrivePicker,
   listDriveFolder,
-  downloadDriveFile,
+  downloadDriveThumbnail,
+  downloadDriveOriginal,
   isDriveAvailable,
+  type DriveFileItem,
 } from "../lib/googleDrive";
 import { showToast } from "./Toast";
 
@@ -59,7 +61,14 @@ async function collectImageFiles(entry: FileSystemEntry): Promise<File[]> {
   return files;
 }
 
-function makeSession(folderName: string, files: File[], eventTag: EventTag, targetCount: number): FolderSession {
+function makeSession(
+  folderName: string,
+  files: File[],
+  eventTag: EventTag,
+  targetCount: number,
+  source: "local" | "google_drive" = "local",
+  driveMeta?: { folderId?: string; items?: DriveFileItem[] },
+): FolderSession {
   return {
     id: `fs-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     folderName,
@@ -71,7 +80,9 @@ function makeSession(folderName: string, files: File[], eventTag: EventTag, targ
     photos: new Map(),
     groups: [],
     targetCount,
-    source: "local",
+    source,
+    driveFolderId: driveMeta?.folderId,
+    driveItems: driveMeta?.items,
   };
 }
 
@@ -88,10 +99,15 @@ export default function FolderUpload() {
   const globalTargetCount   = useStore((s) => s.targetCount);
   const maxPerGroup         = useStore((s) => s.maxPerGroup);
   const setMaxPerGroup      = useStore((s) => s.setMaxPerGroup);
-  const driveQueue          = useStore((s) => s.driveQueue);
-  const addDriveQueueItem   = useStore((s) => s.addDriveQueueItem);
-  const updateDriveQueueItem = useStore((s) => s.updateDriveQueueItem);
-  const removeDriveQueueItem = useStore((s) => s.removeDriveQueueItem);
+  const driveQueue            = useStore((s) => s.driveQueue);
+  const addDriveQueueItem     = useStore((s) => s.addDriveQueueItem);
+  const updateDriveQueueItem  = useStore((s) => s.updateDriveQueueItem);
+  const removeDriveQueueItem  = useStore((s) => s.removeDriveQueueItem);
+  const globalDriveToken      = useStore((s) => s.driveToken);
+  const setDriveToken         = useStore((s) => s.setDriveToken);
+
+  // §16 LOW — 토큰 ref: 동일 컴포넌트 내 재사용 (전역 토큰과 동기화)
+  const driveTokenRef = useRef<string | null>(globalDriveToken);
 
   const [dragging, setDragging]   = useState(false);
   const [loading, setLoading]     = useState(false);
@@ -121,7 +137,7 @@ export default function FolderUpload() {
             continue; // 읽기 실패한 폴더는 건너뜀
           }
           if (files.length === 0) continue;
-          { const tag = inferEventTag(entry.name); addFolderSession(makeSession(entry.name, files, tag, getRecommendedCount(tag))); }
+          { const tag = inferEventTag(entry.name); addFolderSession(makeSession(entry.name, files, tag, getRecommendedCount(tag), "local")); }
           addedCount++;
         }
         if (addedCount === 0) {
@@ -136,7 +152,7 @@ export default function FolderUpload() {
           } catch { /* skip */ }
         }
         if (files.length > 0) {
-          addFolderSession(makeSession("드롭된 사진", files, "other", getRecommendedCount("other")));
+          addFolderSession(makeSession("드롭된 사진", files, "other", getRecommendedCount("other"), "local"));
         } else {
           setErrorMsg("드롭한 파일 중 이미지가 없어요. JPG/PNG/HEIC 파일을 드롭해주세요.");
         }
@@ -183,22 +199,26 @@ export default function FolderUpload() {
     }
 
     for (const [folderName, files] of byFolder) {
-      { const tag = inferEventTag(folderName); addFolderSession(makeSession(folderName, files, tag, getRecommendedCount(tag))); }
+      { const tag = inferEventTag(folderName); addFolderSession(makeSession(folderName, files, tag, getRecommendedCount(tag), "local")); }
     }
   }, [addFolderSession, globalTargetCount]);
 
-  // ── Google Drive 경로 (백그라운드 다운로드) ───────────────────────────────
-  // 피커로 폴더를 선택하는 즉시 전역 driveQueue에 등록하고 백그라운드에서 다운로드 시작.
-  // handleDriveImport 자체는 picker await까지만 블로킹 → 사용자는 바로 다시 클릭 가능.
-  // driveQueue는 Zustand 전역 스토어 → 다른 화면으로 이동해도 진행상황 유지.
+  // ── Google Drive 경로 (백그라운드 다운로드, §16 단계화) ─────────────────────
+  // 피커 선택 즉시 driveQueue 등록 → fire-and-forget으로 썸네일(800px) 다운로드.
+  // 원본 다운로드는 분석 후 ZIP 확정 시점까지 지연. (§16 핵심 전략)
   const handleDriveImport = useCallback(async () => {
     setErrorMsg(null);
-    // 브라우저 알림 권한 요청 (최초 1회)
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
     try {
-      const token = await getGoogleAccessToken();
+      // §16 LOW — 전역 캐시 토큰 재사용, 없으면 새로 발급
+      let token = driveTokenRef.current;
+      if (!token) {
+        token = await getGoogleAccessToken();
+        driveTokenRef.current = token;
+        setDriveToken(token);
+      }
       const picked = await openDrivePicker(token);
 
       const qid = `drive-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -206,28 +226,55 @@ export default function FolderUpload() {
       if (picked.type === "folder") {
         addDriveQueueItem({ id: qid, folderName: picked.name, status: "downloading", current: 0, total: 0 });
 
-        // 백그라운드 다운로드 (await 없이 fire-and-forget)
         (async () => {
           try {
-            const items = await listDriveFolder(picked.id, token);
+            const items = await listDriveFolder(picked.id, token!);
             if (items.length === 0) {
               updateDriveQueueItem(qid, { status: "error", errorMsg: "이미지를 찾지 못했어요" });
               return;
             }
             updateDriveQueueItem(qid, { total: items.length });
 
+            // §16 HIGH — 썸네일(800px) 우선, Drive 미처리 파일은 원본 폴백
             const files: File[] = [];
+            const usedItems: typeof items = [];
+            let thumbCount = 0;
+            const origSavedBytes = items.reduce((s, it) => s + parseInt(it.size ?? "0", 10), 0);
+
             for (let i = 0; i < items.length; i++) {
-              files.push(await downloadDriveFile(items[i], token));
+              const item = items[i];
+              const thumb = await downloadDriveThumbnail(item, token!);
+              if (thumb) {
+                files.push(thumb);
+                thumbCount++;
+              } else {
+                // Drive 썸네일 미처리(HEIC 등) → 원본 폴백
+                files.push(await downloadDriveOriginal(item, token!));
+              }
+              usedItems.push(item);
               updateDriveQueueItem(qid, { current: i + 1 });
             }
-            { const tag = inferEventTag(picked.name); addFolderSession(makeSession(picked.name, files, tag, getRecommendedCount(tag))); }
+
+            const tag = inferEventTag(picked.name);
+            addFolderSession(makeSession(
+              picked.name, files, tag, getRecommendedCount(tag),
+              "google_drive",
+              { folderId: picked.id, items: usedItems },
+            ));
             updateDriveQueueItem(qid, { status: "done" });
-            showToast(`${picked.name} — ${files.length}장 가져왔어요!`, "✅");
-            // 브라우저 알림 (탭이 백그라운드에 있을 때 유용)
+
+            // §16 — 절감량 표시
+            const savedMB = (origSavedBytes / 1024 / 1024).toFixed(1);
+            showToast(
+              thumbCount > 0
+                ? `${picked.name} — 썸네일 ${thumbCount}장 분석 준비 완료 (원본 ${savedMB}MB 절약)`
+                : `${picked.name} — ${files.length}장 가져왔어요!`,
+              "✅",
+            );
+
             if ("Notification" in window && Notification.permission === "granted") {
-              new Notification("딸깍픽스 — 다운로드 완료 ✅", {
-                body: `${picked.name} · ${files.length}장 준비됐어요. 분석을 시작해보세요!`,
+              new Notification("딸깍픽스 — Drive 준비 완료 ✅", {
+                body: `${picked.name} · ${files.length}장. 분석을 시작해보세요!`,
                 icon: "/favicon.ico",
               });
             }
@@ -239,6 +286,7 @@ export default function FolderUpload() {
         })();
 
       } else {
+        // 개별 파일 선택: Picker 응답에 thumbnailLink 없으므로 원본 다운로드
         const items = picked.items ?? [];
         if (items.length === 0) { setErrorMsg("선택한 파일이 없어요."); return; }
 
@@ -248,15 +296,19 @@ export default function FolderUpload() {
           try {
             const files: File[] = [];
             for (let i = 0; i < items.length; i++) {
-              files.push(await downloadDriveFile(items[i], token));
+              files.push(await downloadDriveOriginal(items[i], token!));
               updateDriveQueueItem(qid, { current: i + 1 });
             }
-            addFolderSession(makeSession("Drive 사진", files, "other", getRecommendedCount("other")));
+            addFolderSession(makeSession(
+              "Drive 사진", files, "other", getRecommendedCount("other"),
+              "google_drive",
+              { items },
+            ));
             updateDriveQueueItem(qid, { status: "done" });
             showToast(`${files.length}장 가져왔어요!`, "✅");
             if ("Notification" in window && Notification.permission === "granted") {
-              new Notification("딸깍픽스 — 다운로드 완료 ✅", {
-                body: `Drive 사진 ${files.length}장 준비됐어요. 분석을 시작해보세요!`,
+              new Notification("딸깍픽스 — Drive 준비 완료 ✅", {
+                body: `Drive 사진 ${files.length}장 준비됐어요.`,
                 icon: "/favicon.ico",
               });
             }
@@ -272,7 +324,7 @@ export default function FolderUpload() {
         setErrorMsg(`Drive 연동 오류: ${err.message}`);
       }
     }
-  }, [addFolderSession, globalTargetCount, addDriveQueueItem, updateDriveQueueItem, removeDriveQueueItem]);
+  }, [addFolderSession, globalTargetCount, addDriveQueueItem, updateDriveQueueItem, removeDriveQueueItem, setDriveToken]);
 
   // ── 분석 시작 ────────────────────────────────────────────────────────────
 
@@ -290,7 +342,7 @@ export default function FolderUpload() {
 
       {/* ── 헤더 ── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 100,
+        position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 24px",
         borderBottom: "1px solid var(--border)",
