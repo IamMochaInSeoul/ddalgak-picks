@@ -27,6 +27,7 @@ import NicknameCaptureModal from "./NicknameCaptureModal";
 import UserAddress from "./UserAddress";
 import GroupCompareModal from "./GroupCompareModal";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
+import { showToast } from "./Toast";
 import { applyWatermark } from "../lib/watermark";
 import {
   savePastSelections,
@@ -75,6 +76,8 @@ export default function FolderGallery() {
   const isPaid           = useStore((s) => s.payment.isPaid);
   const watermarkEnabled = useStore((s) => s.watermarkEnabled);
   const freeZipLimit     = useStore((s) => s.freeZipLimit);
+  const personClusters   = useStore((s) => s.personClusters);
+  const heroConfig       = useStore((s) => s.heroConfig);
 
   const [activeTab, setActiveTab]       = useState(0);
   const [galleryView, setGalleryView]   = useState<GalleryView>("selected");
@@ -258,12 +261,17 @@ export default function FolderGallery() {
       // 지문 저장 (비동기, 실패해도 무시)
       savePastSelections(toSave, sessionId).catch(() => {});
 
-      // ZIP 완료 토스트 (닉네임 있으면 포함)
+      // ZIP 완료 토스트 (닉네임 + hero 이름 포함)
       {
         const { nickname, honorific } = loadProfile();
         const namePrefix = nickname ? `${nickname}${honorific ?? "님"}, ` : "";
         const count = folderSessions.reduce((sum, s) => sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0);
-        console.info(`[ddalgak] ${namePrefix}${count}장 ZIP 저장 완료.`);
+        const heroIds = heroConfig.selectedPersonIds;
+        const heroNames = heroIds
+          .map((id) => personClusters.get(id)?.displayName)
+          .filter(Boolean) as string[];
+        const heroSuffix = heroNames.length > 0 ? ` 〈${heroNames.join(", ")}〉 중심` : "";
+        showToast(`${namePrefix}${count}장${heroSuffix} ZIP 저장 완료`, "💾");
       }
     } catch (err) {
       console.error("[FolderGallery] ZIP 생성 실패:", err);

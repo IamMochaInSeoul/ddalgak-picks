@@ -76,6 +76,8 @@ export default function Gallery() {
   const isPaid = useStore((s) => s.payment.isPaid);
   const watermarkEnabled = useStore((s) => s.watermarkEnabled);
   const freeZipLimit = useStore((s) => s.freeZipLimit);
+  const personClusters = useStore((s) => s.personClusters);
+  const heroConfig = useStore((s) => s.heroConfig);
 
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
@@ -600,6 +602,17 @@ export default function Gallery() {
         display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div>
           <UserAddress withComma style={{ fontWeight: 700, fontSize: 16 }} />
+          {(() => {
+            const heroIds = heroConfig.selectedPersonIds;
+            const heroNames = heroIds
+              .map((id) => personClusters.get(id)?.displayName)
+              .filter(Boolean) as string[];
+            return heroNames.length > 0 ? (
+              <span style={{ fontWeight: 700, fontSize: 16 }}>
+                〈{heroNames.join(", ")}〉 중심 셀렉.{" "}
+              </span>
+            ) : null;
+          })()}
           <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedPhotos.length}</span>
           <span style={{ color: "var(--text2)", fontSize: 14 }}>장 선택됨</span>
           {!isPaid && selectedPhotos.length > freeZipLimit && (
