@@ -378,7 +378,7 @@ export default function AlbumContainer() {
         folderName = picked.name ?? "Google Drive";
         setDriveProgress({ current: 0, total: 0, label: `${folderName} 파일 목록 조회 중...` });
         items = await listDriveFolder(picked.id, token);
-      } else if (picked.items) {
+      } else if (picked.type === "files") {
         items = picked.items;
         folderName = "Google Drive";
       }

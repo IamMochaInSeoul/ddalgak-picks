@@ -1,13 +1,9 @@
 import type { PhotoEntry, PhotoType } from "./types";
 
 const TYPE_PREFIX: Record<NonNullable<PhotoType>, string> = {
-  baby:      "아기",
-  maternity: "만삭",
-  family:    "가족",
-  pet:       "반려",
-  wedding:   "웨딩",
-  studio:    "스튜디오",
-  mixed:     "픽스",
+  portrait: "픽스",
+  pet:      "반려",
+  mixed:    "픽스",
 };
 
 const MOOD_WORDS = [

@@ -90,7 +90,7 @@ async function loadFaceLandmarker() {
         numFaces: 10,
         // 감지 민감도를 높여서 스튜디오 사진 (측면, 강한 조명 등)도 감지
         minFaceDetectionConfidence: 0.2,
-        minFacePresenceScore: 0.2,
+        minFacePresenceConfidence: 0.2,
         minTrackingConfidence: 0.2,
       });
 
