@@ -17,6 +17,12 @@ export interface UserProfile {
   language: "ko" | "en";
   /** 닉네임 다음에 물어볼 시점 관리 (totalSessions 기준) */
   nicknameDeferredUntilSession?: number;
+  /**
+   * 인물 클러스터 표시명 영속 저장 (PERSONALIZATION §4-5, TECH_SPEC §3.7.4).
+   * key = personId, value = 사용자 입력 이름 ("지유", "엄마")
+   * 임베딩 재매칭으로 같은 personId가 다음 세션에서도 같은 이름을 가짐.
+   */
+  heroPersonNames?: Record<string, string>;
 }
 
 const DEFAULTS: UserProfile = {
@@ -83,4 +89,20 @@ export function shouldShowNicknameModal(): boolean {
 export function deferNicknameModal(): void {
   const profile = loadProfile();
   saveProfile({ nicknameDeferredUntilSession: profile.totalSessions + 5 });
+}
+
+/**
+ * 인물 이름 영속 저장 (PERSONALIZATION §4-5).
+ * PersonSelect에서 이름을 입력할 때 호출.
+ */
+export function saveHeroPersonName(personId: string, name: string): void {
+  const profile = loadProfile();
+  saveProfile({
+    heroPersonNames: { ...(profile.heroPersonNames ?? {}), [personId]: name },
+  });
+}
+
+/** 저장된 인물 이름 전체 반환 */
+export function loadHeroPersonNames(): Record<string, string> {
+  return loadProfile().heroPersonNames ?? {};
 }
