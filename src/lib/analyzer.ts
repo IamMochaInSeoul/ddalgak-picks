@@ -165,7 +165,7 @@ export async function analyzePhotos(
   weights: AnalysisWeights,
   petWeights: PetWeights,
   _filters: Filters,
-  onProgress: (current: number, total: number, stage: string) => void,
+  onProgress: (current: number, total: number, stage: string, discoveries?: { eyeClosed: number; blurry: number }) => void,
   maxPerGroup = 2
 ): Promise<{
   photos: Map<string, PhotoEntry>;
@@ -259,6 +259,8 @@ export async function analyzePhotos(
   onProgress(0, total, "scoring");
 
   const groupScores: { groupId: string; photoId: string; score: number }[] = [];
+  let eyeClosedCount = 0;
+  let blurryCount = 0;
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -266,7 +268,7 @@ export async function analyzePhotos(
     const entry = photosMap.get(id);
     if (!entry) continue;
 
-    onProgress(i, total, "scoring");
+    onProgress(i, total, "scoring", { eyeClosed: eyeClosedCount, blurry: blurryCount });
 
     let bitmap: ImageBitmap;
     try {
@@ -561,12 +563,15 @@ export async function analyzePhotos(
             faceSharpness:     sharpFace,
             globalSharpness:   sharpCenter,
           });
+          if (entry.deductions.includes("EYE_CLOSED")) eyeClosedCount++;
+          if (entry.deductions.some((d) => d === "BLUR" || d === "BLUR_NOISE")) blurryCount++;
           groupScores.push({ groupId: entry.groupId, photoId: id, score: finalScore.total });
         }
       } catch {
         entry.faceDetected = false;
         entry.score = buildFallbackPortraitScore(sharpCenter);
         entry.deductions = sharpCenter < 0.3 ? ["BLUR", "LOW_CONFIDENCE"] : ["LOW_CONFIDENCE"];
+        if (entry.deductions.includes("BLUR")) blurryCount++;
         groupScores.push({ groupId: entry.groupId, photoId: id, score: entry.score.total });
       }
     }

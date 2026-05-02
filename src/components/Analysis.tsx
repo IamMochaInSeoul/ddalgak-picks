@@ -79,11 +79,32 @@ export default function Analysis() {
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState(0);
   const [total, setTotal] = useState(0);
+  const [discoveries, setDiscoveries] = useState<{ eyeClosed: number; blurry: number } | null>(null);
+  // 발견 메시지 최소 800ms 노출을 위한 latched 값
+  const discoveriesLatchRef = useRef<{ eyeClosed: number; blurry: number } | null>(null);
   const started = useRef(false);
 
   const storyTexts = STAGE_STORIES[stage] ?? STAGE_STORIES.loadingModel;
   const story = useRotatingText(storyTexts, 2800);
   const tip = useRotatingText(TIPS, 5000);
+
+  // 발견 메시지: 800ms 동안 이전 값 유지 (spec §1-1)
+  const [latchedDiscoveries, setLatchedDiscoveries] = useState<{ eyeClosed: number; blurry: number } | null>(null);
+  const latchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!discoveries) return;
+    // 값이 커질 때만 업데이트, 이전 타이머 취소 후 800ms 유지
+    const prev = discoveriesLatchRef.current;
+    if (!prev || discoveries.eyeClosed > prev.eyeClosed || discoveries.blurry > prev.blurry) {
+      discoveriesLatchRef.current = discoveries;
+      setLatchedDiscoveries(discoveries);
+      if (latchTimerRef.current) clearTimeout(latchTimerRef.current);
+      latchTimerRef.current = setTimeout(() => {
+        setLatchedDiscoveries(discoveriesLatchRef.current);
+      }, 800);
+    }
+  }, [discoveries]);
 
   useEffect(() => {
     if (started.current) return;
@@ -93,10 +114,11 @@ export default function Analysis() {
     if (!files || files.length === 0 || !photoType) { setStep("upload"); return; }
 
     analyzePhotos(files, photoType, targetCount, weights, petWeights, filters,
-      (cur, tot, stageKey) => {
+      (cur, tot, stageKey, disc) => {
         setAnalysisProgress(cur, tot, stageKey);
         setCurrent(cur);
         setTotal(tot);
+        if (disc) setDiscoveries(disc);
       }, maxPerGroup)
       .then(({ photos, groups, groupScoresWithScene, personClusters }) => {
         setPhotos(photos);
@@ -182,11 +204,23 @@ export default function Analysis() {
           }}>{story.text}</h2>
         </div>
 
-        {/* 사진 카운터 */}
+        {/* 사진 카운터 + 실시간 발견 현황 (spec §1-1) */}
         {total > 0 && stage === "scoring" && (
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20 }}>
-            <MonoNumber value={current} /> / <MonoNumber value={total} />
-          </p>
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 6px" }}>
+              <MonoNumber value={current} /> / <MonoNumber value={total} />
+            </p>
+            {latchedDiscoveries && (latchedDiscoveries.eyeClosed > 0 || latchedDiscoveries.blurry > 0) && (
+              <p style={{
+                fontSize: 12, color: "var(--text2)", margin: 0,
+                fontFamily: "var(--font-mono)", letterSpacing: "0.02em",
+              }}>
+                {latchedDiscoveries.eyeClosed > 0 && `눈 감은 컷 ${latchedDiscoveries.eyeClosed}장 발견`}
+                {latchedDiscoveries.eyeClosed > 0 && latchedDiscoveries.blurry > 0 && " · "}
+                {latchedDiscoveries.blurry > 0 && `흔들린 컷 ${latchedDiscoveries.blurry}장 발견`}
+              </p>
+            )}
+          </div>
         )}
         {(total === 0 || stage !== "scoring") && (
           <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, height: 20 }} />
