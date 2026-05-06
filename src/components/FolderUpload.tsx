@@ -3,11 +3,11 @@
  * 여러 폴더를 드롭/반복 선택 → 폴더별 FolderSession 생성 후 분석 시작
  *
  * 폴더 등록 경로:
- *   A. 드래그앤드롭 → onDrop → processFolderEntries (여러 폴더 한번에)
- *   B. 버튼 클릭 → webkitdirectory 피커 → onFolderInputChange (한 번에 폴더 1개, 반복 가능)
+ *   A. 드래그앤드롭 → onDrop → processFolderEntries (여러 폴더 동시 등록 가능)
+ *   B. 버튼 클릭 → webkitdirectory 피커 → onFolderInputChange (폴더 1개씩, 반복 가능)
  *
  * 주의:
- *   - webkitdirectory 피커는 한 번에 폴더 1개만 선택 가능 (브라우저 제약)
+ *   - webkitdirectory 피커는 폴더를 1개씩만 선택 가능 (브라우저 제약)
  *   - <input>에 accept 속성을 쓰면 webkitdirectory와 충돌해 files가 비어버림 → 제거
  *   - 같은 폴더 재선택 시 onChange가 발화하지 않는 Chrome 버그 → inputKey로 매번 remount
  */
@@ -352,7 +352,7 @@ export default function FolderUpload() {
           onClick={() => setStep("landing")}>
           ← 뒤로
         </SecondaryButton>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "var(--accent2)" }}>📁 폴더 묶음 셀렉</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: "var(--accent2)" }}>폴더 묶음 셀렉</span>
         <LangToggle />
       </div>
 
@@ -366,9 +366,9 @@ export default function FolderUpload() {
           onClick={() => !loading && folderInputRef.current?.click()}
           style={{
             border: `2px dashed ${dragging ? "var(--accent)" : "var(--border)"}`,
-            borderRadius: 16, padding: "40px 24px", textAlign: "center",
+            borderRadius: "var(--radius-lg)", padding: "40px 24px", textAlign: "center",
             cursor: loading ? "wait" : "pointer",
-            background: dragging ? "rgba(108,99,255,0.08)" : "var(--bg2)",
+            background: dragging ? "rgba(45,67,86,0.08)" : "var(--bg2)",
             transition: "all 0.15s", marginBottom: 12,
           }}
         >
@@ -394,7 +394,7 @@ export default function FolderUpload() {
         {errorMsg && (
           <div style={{
             background: "rgba(255,80,80,0.12)", border: "1.5px solid rgba(255,80,80,0.4)",
-            borderRadius: 10, padding: "10px 16px", marginBottom: 12,
+            borderRadius: "var(--radius-md)", padding: "10px 16px", marginBottom: 12,
             fontSize: 13, color: "#ff5050",
           }}>
             ⚠️ {errorMsg}
@@ -408,7 +408,7 @@ export default function FolderUpload() {
           disabled={loading}
           onClick={() => folderInputRef.current?.click()}
         >
-          📁 폴더 선택하기 (한 폴더씩 반복 추가 가능)
+          폴더 선택하기 (한 폴더씩 반복 추가 가능)
         </button>
 
         {/* ── Google Drive 버튼 ── */}
@@ -443,12 +443,12 @@ export default function FolderUpload() {
             {driveQueue.map((item) => (
               <div key={item.id} style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 14px", marginBottom: 6, borderRadius: 10,
+                padding: "10px 14px", marginBottom: 6, borderRadius: "var(--radius-md)",
                 background: item.status === "error"
                   ? "rgba(255,80,80,0.10)"
                   : item.status === "done"
                     ? "rgba(0,200,100,0.10)"
-                    : "rgba(108,99,255,0.08)",
+                    : "rgba(45,67,86,0.08)",
                 border: `1px solid ${
                   item.status === "error" ? "rgba(255,80,80,0.3)"
                   : item.status === "done" ? "rgba(0,200,100,0.3)"
@@ -507,7 +507,7 @@ export default function FolderUpload() {
                 style={{
                   padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                   border: `2px solid ${maxPerGroup === v ? "var(--accent)" : "var(--border)"}`,
-                  background: maxPerGroup === v ? "rgba(108,99,255,0.15)" : "transparent",
+                  background: maxPerGroup === v ? "rgba(45,67,86,0.15)" : "transparent",
                   color: maxPerGroup === v ? "var(--accent2)" : "var(--text2)",
                 }}>
                 {v >= 9999 ? "무제한" : `${v}장`}
@@ -528,7 +528,7 @@ export default function FolderUpload() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      📁 {session.folderName}
+                      {session.folderName}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 2 }}>
                       {session.files.length.toLocaleString()}장
@@ -554,9 +554,9 @@ export default function FolderUpload() {
                         <button key={tag}
                           onClick={() => { setFolderSessionEventTag(session.id, tag); setEditingTag(null); }}
                           style={{
-                            padding: "5px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            padding: "5px 10px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                             border: `1.5px solid ${session.eventTag === tag ? "var(--accent)" : "var(--border)"}`,
-                            background: session.eventTag === tag ? "rgba(108,99,255,0.15)" : "transparent",
+                            background: session.eventTag === tag ? "rgba(45,67,86,0.15)" : "transparent",
                             color: session.eventTag === tag ? "var(--accent2)" : "var(--text2)",
                           }}>
                           {EVENT_TAG_LABELS[tag]}
@@ -569,9 +569,9 @@ export default function FolderUpload() {
                     <button
                       onClick={() => setEditingTag(session.id)}
                       style={{
-                        padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        padding: "4px 12px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                         border: "1.5px solid var(--accent)",
-                        background: "rgba(108,99,255,0.12)",
+                        background: "rgba(45,67,86,0.12)",
                         color: "var(--accent2)",
                       }}
                     >
@@ -590,18 +590,18 @@ export default function FolderUpload() {
                         <button key={n}
                           onClick={() => setFolderSessionTargetCount(session.id, n)}
                           style={{
-                            padding: "4px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            padding: "4px 8px", borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                             border: `1.5px solid ${session.targetCount === n ? "var(--accent)" : "var(--border)"}`,
-                            background: session.targetCount === n ? "rgba(108,99,255,0.15)" : "transparent",
+                            background: session.targetCount === n ? "rgba(45,67,86,0.15)" : "transparent",
                             color: session.targetCount === n ? "var(--accent2)" : "var(--text2)",
                           }}>
-                          {n}{n === getRecommendedCount(session.eventTag) ? " ★" : ""}
+                          {n}{n === getRecommendedCount(session.eventTag) ? " (추천)" : ""}
                         </button>
                       ))}
                       <input type="number" min={1} max={3000} value={session.targetCount}
                         onChange={(e) => setFolderSessionTargetCount(session.id, Number(e.target.value))}
                         style={{
-                          width: 54, padding: "4px 6px", borderRadius: 6,
+                          width: 54, padding: "4px 6px", borderRadius: "var(--radius-md)",
                           border: "1.5px solid var(--border)", background: "var(--bg3)",
                           color: "var(--text)", fontSize: 12,
                         }}

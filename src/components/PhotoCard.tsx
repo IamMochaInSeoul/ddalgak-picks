@@ -68,7 +68,7 @@ export default function PhotoCard({ photo, compact = false, onDoubleClick, onCon
       const barW = Math.round(size * score);
       ctx.fillStyle = "rgba(0,0,0,0.5)";
       ctx.fillRect(0, size - 18, size, 18);
-      ctx.fillStyle = score >= 0.7 ? "#22c55e" : score >= 0.4 ? "#f59e0b" : "#ef4444";
+      ctx.fillStyle = score >= 0.7 ? "var(--high)" : score >= 0.4 ? "#f59e0b" : "#ef4444";
       ctx.fillRect(0, size - 18, barW, 18);
       ctx.fillStyle = "white";
       ctx.font = `bold ${compact ? 10 : 11}px sans-serif`;
@@ -139,7 +139,7 @@ export default function PhotoCard({ photo, compact = false, onDoubleClick, onCon
                 color: DEDUCTION_COLORS[d] ?? "#999",
                 fontSize: 9,
                 padding: "1px 5px",
-                borderRadius: 3,
+                borderRadius: "var(--radius-sm)",
                 fontWeight: 600,
               }}
             >

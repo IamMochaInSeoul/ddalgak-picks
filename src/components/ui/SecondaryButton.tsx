@@ -39,13 +39,13 @@ export default function SecondaryButton({
         color: disabled
           ? "var(--text-disabled, #3a3a3a)"
           : hovered
-          ? "var(--accent, #C9A961)"
+          ? "var(--accent)"
           : "var(--text-secondary)",
         border: `1px solid ${
           disabled
             ? "var(--border)"
             : hovered
-            ? "var(--accent, #C9A961)"
+            ? "var(--accent)"
             : "var(--border-strong)"
         }`,
         borderRadius: "var(--radius-sm, 2px)",

@@ -9,22 +9,18 @@ import type { AppState } from "../lib/types";
 const CARDS = [
   {
     id: "personal" as const,
-    emoji: "📷",
     tag: "돌잔치 · 여행 · 일상",
     title: "사진만 셀렉",
-    desc: "수백~수천 장에서 베스트컷만 쏙쏙 골라드려요.\n파일 또는 폴더를 넣으면 AI가 알아서.",
-    cta: "사진만 셀렉하기",
-    accentRgb: "108,99,255",
+    desc: "수백~수천 장에서 베스트컷만 셀렉합니다.\n파일 또는 폴더를 넣으세요.",
+    cta: "사진만 셀렉",
   },
   {
     id: "studio" as const,
-    emoji: "📁",
     tag: "스튜디오 · 웨딩 · 돌스냅",
     title: "스튜디오용 셀렉",
-    desc: "스튜디오 촬영 사진을 의상·배경별로 정리하고,\n앨범 배치까지 한번에.",
-    cta: "스튜디오용 셀렉하기",
-    accentRgb: "124,111,247",
-    badge: "★ 스튜디오 추천",
+    desc: "스튜디오 촬영본을 의상·배경별로 정리하고,\n앨범 배치까지 이어집니다.",
+    cta: "스튜디오용 셀렉",
+    badge: "스튜디오 추천",
   },
 ] as const;
 
@@ -65,14 +61,20 @@ export default function Landing() {
       {/* 히어로 */}
       <div style={{ textAlign: "center", maxWidth: 580, padding: "120px 24px 0" }}>
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "rgba(108,99,255,0.12)",
-          border: "1px solid rgba(108,99,255,0.3)",
-          borderRadius: 20, padding: "5px 14px",
-          fontSize: 12, color: "var(--accent2)", fontWeight: 600,
-          marginBottom: 22, letterSpacing: "0.02em",
+          display: "inline-flex", alignItems: "center",
+          background: "var(--accent-soft)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-sm)",
+          padding: "4px 10px",
+          fontSize: 11,
+          color: "var(--text-secondary)",
+          fontFamily: "var(--font-mono)",
+          fontWeight: 500,
+          marginBottom: 24,
+          letterSpacing: "var(--tracking-uppercase)",
+          textTransform: "uppercase",
         }}>
-          ✦ AI Photo Selector · Beta
+          BETA
         </div>
 
         <Display
@@ -107,49 +109,40 @@ export default function Landing() {
             style={{
               position: "relative",
               display: "flex", flexDirection: "column",
-              padding: "28px 24px 24px",
-              background: "var(--bg2)",
-              border: "1px solid var(--border)",
-              borderRadius: 20, cursor: "pointer",
-              transition: "transform 0.18s, box-shadow 0.18s, border-color 0.18s",
+              padding: "var(--space-8) var(--space-6) var(--space-6)",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              cursor: "pointer",
+              transition: "border-color var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard)",
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLDivElement;
-              el.style.transform = "translateY(-5px)";
-              el.style.boxShadow = `0 20px 48px rgba(${card.accentRgb},0.22)`;
-              el.style.borderColor = `rgba(${card.accentRgb},0.55)`;
+              el.style.borderColor = "var(--accent)";
+              el.style.opacity = "0.95";
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLDivElement;
-              el.style.transform = "";
-              el.style.boxShadow = "";
-              el.style.borderColor = "var(--border)";
+              el.style.borderColor = "var(--border-subtle)";
+              el.style.opacity = "1";
             }}
           >
             {"badge" in card && (
               <div style={{
                 position: "absolute", top: -1, right: 18,
-                background: `rgba(${card.accentRgb},0.9)`, color: "#fff",
+                background: "var(--accent)", color: "var(--bg-base)",
                 fontSize: 10, fontWeight: 700, padding: "4px 10px",
-                borderRadius: "0 0 10px 10px", letterSpacing: "0.03em",
+                borderRadius: "0 0 var(--radius-sm) var(--radius-sm)", letterSpacing: "0.03em",
               }}>
                 {(card as { badge: string }).badge}
               </div>
             )}
 
             <div style={{
-              width: 54, height: 54, borderRadius: 14,
-              background: `rgba(${card.accentRgb},0.12)`,
-              border: `1px solid rgba(${card.accentRgb},0.25)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28, marginBottom: 16,
-            }}>
-              {card.emoji}
-            </div>
-
-            <div style={{
               fontSize: 11, fontWeight: 600, marginBottom: 8,
-              color: `rgba(${card.accentRgb},0.9)`, letterSpacing: "0.01em",
+              color: "var(--text-secondary)", letterSpacing: "0.01em",
+              fontFamily: "var(--font-mono)",
+              textTransform: "uppercase",
             }}>
               {card.tag}
             </div>
@@ -158,14 +151,15 @@ export default function Landing() {
               {card.title}
             </div>
 
-            <p style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.7, flex: 1, marginBottom: 22, whiteSpace: "pre-line" }}>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, flex: 1, marginBottom: 22, whiteSpace: "pre-line" }}>
               {card.desc}
             </p>
 
             <button style={{
-              width: "100%", padding: "13px 0", borderRadius: 10, border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg, rgba(${card.accentRgb},0.85), rgba(${card.accentRgb},1))`,
-              color: "#fff", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
+              width: "100%", padding: "13px 0",
+              borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer",
+              background: "var(--accent)",
+              color: "var(--bg-base)", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
               pointerEvents: "none",
             }}>
               {card.cta}
@@ -186,7 +180,7 @@ export default function Landing() {
         ].map((s) => (
           <div key={s.num} style={{
             flex: "1 1 180px", textAlign: "center", padding: "20px 16px",
-            background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 14,
+            background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)",
           }}>
             <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--accent)", marginBottom: 8, letterSpacing: "var(--tracking-uppercase)" }}>{s.num}</div>
             <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 5 }}>{s.title}</div>

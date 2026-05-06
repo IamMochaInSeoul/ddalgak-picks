@@ -18,7 +18,7 @@ export default function LangToggle() {
       style={{
         background: "transparent",
         border: "1px solid var(--border)",
-        borderRadius: 6,
+        borderRadius: "var(--radius-md)",
         padding: "4px 12px",
         color: "var(--text2)",
         fontSize: 13,

@@ -54,11 +54,10 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
       padding: 16,
     }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{
-        background: "var(--bg2)", borderRadius: 20,
+        background: "var(--bg2)", borderRadius: "var(--radius-sm)", 
         border: "1px solid var(--border)",
         width: "100%", maxWidth: 440,
         padding: "28px 24px",
-        boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
       }}>
         {/* 헤더 */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -83,7 +82,7 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
             const isSelected = selected === key;
             return (
               <button key={key} onClick={() => setSelected(key)} style={{
-                padding: "14px 16px", borderRadius: 12, cursor: "pointer",
+                padding: "14px 16px", borderRadius: "var(--radius-lg)",  cursor: "pointer",
                 border: isSelected ? "2px solid var(--accent)" : "1.5px solid var(--border)",
                 background: isSelected ? "rgba(139,92,246,0.08)" : "var(--bg)",
                 display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -120,7 +119,7 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="hello@example.com"
             style={{
-              width: "100%", padding: "10px 12px", borderRadius: 10,
+              width: "100%", padding: "10px 12px", borderRadius: "var(--radius-md)", 
               border: "1.5px solid var(--border)", background: "var(--bg)",
               color: "var(--text)", fontSize: 14, outline: "none",
               boxSizing: "border-box",
@@ -138,7 +137,7 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
           onClick={featureOn ? handlePay : handleDevBypass}
           disabled={loading}
           style={{
-            width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
+            width: "100%", padding: "13px 0", borderRadius: "var(--radius-lg)",  border: "none",
             cursor: loading ? "wait" : "pointer",
             background: "linear-gradient(135deg, var(--accent), var(--accent2))",
             color: "#fff", fontWeight: 800, fontSize: 16,

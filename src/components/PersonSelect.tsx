@@ -336,7 +336,7 @@ export default function PersonSelect() {
         <div style={{
           width: 40,
           height: 22,
-          borderRadius: 11,
+          borderRadius: "var(--radius-lg)", 
           background: guaranteeNonHero ? "var(--accent)" : "var(--border)",
           position: "relative",
           transition: "background 0.15s",
@@ -351,7 +351,6 @@ export default function PersonSelect() {
             borderRadius: "50%",
             background: "#fff",
             transition: "left 0.15s",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }} />
         </div>
         <div>
@@ -396,7 +395,7 @@ export default function PersonSelect() {
             borderRadius: "var(--radius-sm, 2px)",
             fontSize: 15,
             fontWeight: 700,
-            background: selectedIds.length > 0 ? "var(--accent, #C9A961)" : "var(--bg2)",
+            background: selectedIds.length > 0 ? "var(--accent)" : "var(--bg2)",
             color: selectedIds.length > 0 ? "var(--bg)" : "var(--text-secondary)",
             border: "none",
             cursor: selectedIds.length > 0 ? "pointer" : "default",
@@ -433,7 +432,6 @@ export default function PersonSelect() {
             padding: "28px 24px",
             width: "100%",
             maxWidth: 340,
-            boxShadow: "0 24px 72px rgba(0,0,0,0.5)",
           }}>
             <div style={{
               fontFamily: "var(--font-display)",
@@ -492,7 +490,7 @@ export default function PersonSelect() {
                   flex: 2,
                   height: 44,
                   borderRadius: "var(--radius-sm, 2px)",
-                  background: "var(--accent, #C9A961)",
+                  background: "var(--accent)",
                   color: "var(--bg)",
                   border: "none",
                   cursor: "pointer",
@@ -520,7 +518,6 @@ export default function PersonSelect() {
           padding: "12px 20px",
           fontSize: 13,
           color: "var(--text-primary)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
           zIndex: 9200,
           whiteSpace: "nowrap",
           maxWidth: "90vw",

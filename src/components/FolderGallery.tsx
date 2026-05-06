@@ -451,7 +451,7 @@ export default function FolderGallery() {
           onClick={() => setStep("folderUpload")}>
           ← 뒤로
         </button>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent2)" }}>📁 폴더 묶음 셀렉</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent2)" }}>폴더 묶음 셀렉</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {allDone && totalSelected > 0 && (
             <button
@@ -508,8 +508,8 @@ export default function FolderGallery() {
               {done && (
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "2px 6px",
-                  borderRadius: 10,
-                  background: "rgba(108,99,255,0.15)",
+                  borderRadius: "var(--radius-md)",
+                  background: "rgba(45,67,86,0.15)",
                   color: "var(--accent2)",
                 }}>
                   {selCount}장
@@ -540,14 +540,14 @@ export default function FolderGallery() {
             </div>
             <div style={{
               width: "100%", maxWidth: 360, margin: "0 auto",
-              height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden",
+              height: 6, background: "var(--border)", borderRadius: "var(--radius-sm)", overflow: "hidden",
             }}>
               <div style={{
                 height: "100%",
                 width: `${Math.round(activeSession.progress * 100)}%`,
                 background: "linear-gradient(90deg, var(--accent), var(--accent2))",
                 transition: "width 0.3s",
-                borderRadius: 3,
+                borderRadius: "var(--radius-sm)",
               }} />
             </div>
             <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 8 }}>
@@ -581,15 +581,15 @@ export default function FolderGallery() {
             {/* 세션 요약 */}
             <div style={{
               display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
-              padding: "12px 16px", borderRadius: 10,
-              background: "rgba(108,99,255,0.08)",
-              border: "1px solid rgba(108,99,255,0.2)",
+              padding: "12px 16px", borderRadius: "var(--radius-md)",
+              background: "rgba(45,67,86,0.08)",
+              border: "1px solid rgba(45,67,86,0.2)",
             }}>
               <div>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "3px 8px",
-                  borderRadius: 20,
-                  background: "rgba(108,99,255,0.15)",
+                  borderRadius: "var(--radius-sm)",
+                  background: "rgba(45,67,86,0.15)",
                   color: "var(--accent2)",
                   marginRight: 8,
                 }}>
@@ -609,7 +609,7 @@ export default function FolderGallery() {
             {/* ── 갤러리 뷰 탭 ── */}
             <div style={{
               display: "flex", gap: 0, marginBottom: 16,
-              background: "var(--bg2)", borderRadius: 10, padding: 4,
+              background: "var(--bg2)", borderRadius: "var(--radius-md)", padding: 4,
               width: "fit-content",
             }}>
               {(["selected", "excluded", "all"] as GalleryView[]).map((view) => {
@@ -624,7 +624,7 @@ export default function FolderGallery() {
                     onClick={() => setGalleryView(view)}
                     style={{
                       padding: "6px 14px", fontSize: 12, fontWeight: isActive ? 700 : 500,
-                      borderRadius: 7, border: "none", cursor: "pointer",
+                      borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer",
                       background: isActive ? "var(--accent)" : "transparent",
                       color: isActive ? "#fff" : "var(--text2)",
                       transition: "all 0.15s",
@@ -658,7 +658,7 @@ export default function FolderGallery() {
                         overflow: "hidden",
                         aspectRatio: "1",
                         background: "var(--bg3)",
-                        border: `2px solid ${isSelected ? "rgba(108,99,255,0.5)" : "rgba(128,128,160,0.2)"}`,
+                        border: `2px solid ${isSelected ? "rgba(45,67,86,0.5)" : "rgba(128,128,160,0.2)"}`,
                         cursor: "pointer",
                         opacity: isSelected ? 1 : 0.6,
                         transition: "opacity 0.15s, border-color 0.15s",
@@ -687,7 +687,7 @@ export default function FolderGallery() {
                       <div style={{
                         position: "absolute", bottom: 4, right: 4,
                         fontSize: 10, fontWeight: 700, padding: "2px 5px",
-                        borderRadius: 6,
+                        borderRadius: "var(--radius-md)",
                         background: photo.confidence === "HIGH"
                           ? "rgba(0,200,100,0.85)"
                           : photo.confidence === "MEDIUM"
@@ -703,7 +703,7 @@ export default function FolderGallery() {
                         <div style={{
                           position: "absolute", top: 4, right: 4,
                           fontSize: 10, fontWeight: 700, padding: "2px 5px",
-                          borderRadius: 6,
+                          borderRadius: "var(--radius-md)",
                           background: "rgba(251,191,36,0.9)",
                           color: "#1a1000",
                           maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -724,7 +724,7 @@ export default function FolderGallery() {
                           {photo.deductions.slice(0, 2).map((code) => (
                             <span key={code} style={{
                               fontSize: 9, fontWeight: 700, padding: "1px 5px",
-                              borderRadius: 5,
+                              borderRadius: "var(--radius-md)",
                               background: "rgba(239,68,68,0.85)",
                               color: "#fff",
                             }}>
@@ -742,8 +742,8 @@ export default function FolderGallery() {
                           style={{
                             position: "absolute", top: 4, right: dupe ? 28 : 4,
                             fontSize: 9, fontWeight: 700, padding: "2px 5px",
-                            borderRadius: 5,
-                            background: "rgba(108,99,255,0.85)",
+                            borderRadius: "var(--radius-md)",
+                            background: "rgba(45,67,86,0.85)",
                             color: "#fff",
                             cursor: "pointer",
                           }}

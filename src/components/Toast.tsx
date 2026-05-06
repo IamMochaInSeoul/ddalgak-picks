@@ -47,9 +47,8 @@ export function ToastContainer() {
           background: "rgba(30,30,36,0.96)",
           backdropFilter: "blur(12px)",
           border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 14, padding: "12px 20px",
+          borderRadius: "var(--radius-lg)",  padding: "12px 20px",
           display: "flex", alignItems: "center", gap: 10,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
           animation: "toastIn 0.28s cubic-bezier(0.34,1.56,0.64,1)",
           whiteSpace: "nowrap",
         }}>
@@ -59,8 +58,8 @@ export function ToastContainer() {
       ))}
       <style>{`
         @keyframes toastIn {
-          from { opacity: 0; transform: translateY(16px) scale(0.92); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
+          from { opacity: 0; transform: scale(0.92); }
+          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>

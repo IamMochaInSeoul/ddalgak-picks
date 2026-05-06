@@ -34,7 +34,7 @@ export default function PrimaryButton({
         height: 56,
         padding: "0 32px",
         width: fullWidth ? "100%" : undefined,
-        background: isDisabled ? "var(--text-disabled, #3a3a3a)" : "var(--accent, #C9A961)",
+        background: isDisabled ? "var(--text-disabled, #3a3a3a)" : "var(--accent)",
         color: isDisabled ? "var(--text-tertiary, #666)" : "#0E0D0B",
         border: "none",
         borderRadius: "var(--radius-sm, 2px)",

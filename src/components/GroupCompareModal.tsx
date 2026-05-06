@@ -58,7 +58,6 @@ export default function GroupCompareModal({ group, photos, onSwap, onClose }: Pr
         padding: "28px 24px",
         maxWidth: 640, width: "100%",
         maxHeight: "90vh", overflow: "auto",
-        boxShadow: "0 24px 72px rgba(0,0,0,0.55)",
       }}>
         {/* Header */}
         <div style={{
@@ -106,7 +105,7 @@ export default function GroupCompareModal({ group, photos, onSwap, onClose }: Pr
                 style={{
                   position: "relative",
                   cursor: "pointer",
-                  borderRadius: 10,
+                  borderRadius: "var(--radius-md)", 
                   border: isBest
                     ? "2px solid var(--accent)"
                     : "2px solid var(--border)",
@@ -179,7 +178,7 @@ export default function GroupCompareModal({ group, photos, onSwap, onClose }: Pr
                   }}>
                     {photo.deductions.slice(0, 2).map((d) => (
                       <span key={d} style={{
-                        fontSize: 9, padding: "1px 4px", borderRadius: 3,
+                        fontSize: 9, padding: "1px 4px", borderRadius: "var(--radius-sm)",
                         background: "rgba(239,68,68,0.85)", color: "#fff",
                         fontWeight: 600,
                       }}>

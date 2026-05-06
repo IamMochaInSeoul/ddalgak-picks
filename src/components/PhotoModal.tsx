@@ -20,9 +20,9 @@ const DEDUCTION_INFO: Record<string, { label: string; desc: string; color: strin
 };
 
 const CONFIDENCE_LABEL: Record<string, { label: string; color: string }> = {
-  HIGH:   { label: "높음 ★★★", color: "#22c55e" },
-  MEDIUM: { label: "보통 ★★",  color: "#f59e0b" },
-  LOW:    { label: "낮음 ★",   color: "#ef4444" },
+  HIGH:   { label: "높음 3/3", color: "var(--high)" },
+  MEDIUM: { label: "보통 2/3", color: "var(--med)" },
+  LOW:    { label: "낮음 1/3", color: "var(--low)" },
 };
 
 function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
@@ -130,7 +130,7 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
   const isPortrait = score && "eyeOpen" in score;
   const isPet = score && "eyeEstimate" in score;
   const totalScore = Math.round((score?.total ?? 0) * 100);
-  const totalColor = totalScore >= 70 ? "#22c55e" : totalScore >= 40 ? "#f59e0b" : "#ef4444";
+  const totalColor = totalScore >= 70 ? "var(--high)" : totalScore >= 40 ? "#f59e0b" : "#ef4444";
   const conf = CONFIDENCE_LABEL[photo.confidence] ?? { label: "낮음", color: "#ef4444" };
 
   const zoomPct = Math.round(zoom * 100);
@@ -149,12 +149,11 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
         onClick={(e) => e.stopPropagation()}
         style={{
           display: "flex", flexDirection: "row", gap: 0,
-          background: "var(--bg2)", borderRadius: 16,
+          background: "var(--bg2)", borderRadius: "var(--radius-lg)",
           overflow: "hidden",
           width: "min(96vw, 1100px)",
           height: "min(92vh, 760px)",
           border: "1px solid var(--border)",
-          boxShadow: "0 32px 100px rgba(0,0,0,0.7)",
         }}
       >
         {/* Left: image viewer */}
@@ -208,7 +207,7 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           <div style={{
             position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
             display: "flex", alignItems: "center", gap: 6,
-            background: "rgba(0,0,0,0.7)", borderRadius: 20, padding: "4px 10px",
+            background: "rgba(0,0,0,0.7)", borderRadius: "var(--radius-sm)", padding: "4px 10px",
           }}>
             <button onClick={() => { const z = Math.max(MIN_ZOOM, zoom - 0.5); setZoom(z); if (z <= 1) setPan({ x: 0, y: 0 }); }}
               style={{ background: "none", border: "none", color: "white", fontSize: 18, cursor: "pointer", width: 28, lineHeight: 1 }}>−</button>
@@ -227,7 +226,7 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           <div style={{
             position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
             background: "rgba(0,0,0,0.6)", color: "white", fontSize: 11,
-            padding: "2px 10px", borderRadius: 10,
+            padding: "2px 10px", borderRadius: "var(--radius-md)",
           }}>
             {currentIndex + 1} / {allPhotos.length}
           </div>
@@ -250,13 +249,13 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           {/* Total score */}
           <div style={{
             textAlign: "center", marginBottom: 20,
-            padding: "16px", borderRadius: 12, background: "var(--bg3)",
+            padding: "16px", borderRadius: "var(--radius-lg)", background: "var(--bg3)",
           }}>
             <div style={{ fontSize: 40, fontWeight: 900, color: totalColor }}>{totalScore}</div>
             <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 2 }}>종합 점수 (100점 만점)</div>
             <div style={{
               display: "inline-block", marginTop: 8,
-              padding: "2px 10px", borderRadius: 10,
+              padding: "2px 10px", borderRadius: "var(--radius-md)",
               background: `${conf.color}22`, color: conf.color, fontSize: 11, fontWeight: 700,
             }}>
               신뢰도 {conf.label}
@@ -267,8 +266,8 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           {isPortrait && score && "eyeOpen" in score && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>📊 세부 평가</div>
-              <ScoreBar label="눈 뜸 정도"  value={score.eyeOpen}    color="#6c63ff" />
-              <ScoreBar label="선명도"      value={score.sharpness}  color="#22c55e" />
+              <ScoreBar label="눈 뜸 정도"  value={score.eyeOpen}    color="var(--accent)" />
+              <ScoreBar label="선명도"      value={score.sharpness}  color="var(--high)" />
               <ScoreBar label="표정 (미소)" value={score.expression} color="#f59e0b" />
               <ScoreBar label="정면 여부"   value={score.facing}     color="#3b82f6" />
             </div>
@@ -276,8 +275,8 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           {isPet && score && "eyeEstimate" in score && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>📊 세부 평가</div>
-              <ScoreBar label="선명도"       value={score.sharpness}   color="#22c55e" />
-              <ScoreBar label="눈 부위 선명" value={score.eyeEstimate} color="#6c63ff" />
+              <ScoreBar label="선명도"       value={score.sharpness}   color="var(--high)" />
+              <ScoreBar label="눈 부위 선명" value={score.eyeEstimate} color="var(--accent)" />
               <ScoreBar label="피사체 위치"  value={score.position}    color="#f59e0b" />
             </div>
           )}
@@ -308,8 +307,8 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           {photo.deductions.length === 0 && (
             <div style={{
               padding: "8px 12px", borderRadius: 8, marginBottom: 16,
-              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
-              fontSize: 12, color: "#22c55e",
+              background: "rgba(107,139,90,0.1)", border: "1px solid rgba(107,139,90,0.3)",
+              fontSize: 12, color: "var(--high)",
             }}>
               ✅ 감점 요소 없음
             </div>
@@ -319,9 +318,9 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
           <button
             onClick={() => onToggleSelect(photo.id)}
             style={{
-              width: "100%", padding: "12px", borderRadius: 10, cursor: "pointer",
+              width: "100%", padding: "12px", borderRadius: "var(--radius-md)", cursor: "pointer",
               border: `2px solid ${photo.isSelected ? "#ef4444" : "var(--accent)"}`,
-              background: photo.isSelected ? "rgba(239,68,68,0.15)" : "rgba(108,99,255,0.15)",
+              background: photo.isSelected ? "rgba(239,68,68,0.15)" : "rgba(45,67,86,0.15)",
               color: photo.isSelected ? "#ef4444" : "var(--accent2)",
               fontWeight: 700, fontSize: 14, transition: "all 0.15s",
             }}
