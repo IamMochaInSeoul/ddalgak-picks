@@ -28,7 +28,7 @@
   --accent2:    var(--accent-dim);    /* #D4BC82 */
 
   /* 상태 컬러는 기존 유지 (갤러리 배지 등에서 사용) */
-  --high: #22c55e;
+  --high: #6B8B5A;   /* 차분한 올리브 그린, 형광 회피 */
   --med:  var(--warning);
   --low:  var(--critical);
 
