@@ -343,9 +343,9 @@ export default function Gallery() {
                   { label: "5장", value: 5 }, { label: "무제한", value: 9999 },
                 ].map(({ label, value }) => (
                   <button key={value} onClick={() => setMaxPerGroup(value)}
-                    style={{ padding: "5px 10px", borderRadius: 7, fontSize: 12,
+                    style={{ padding: "5px 10px", borderRadius: "var(--radius-lg)", fontSize: 12,
                       border: `2px solid ${maxPerGroup === value ? "var(--accent)" : "var(--border)"}`,
-                      background: maxPerGroup === value ? "rgba(108,99,255,0.15)" : "transparent",
+                      background: maxPerGroup === value ? "rgba(45,67,86,0.15)" : "transparent",
                       color: maxPerGroup === value ? "var(--accent2)" : "var(--text2)",
                       fontWeight: 600, cursor: "pointer" }}>{label}</button>
                 ))}
@@ -363,8 +363,8 @@ export default function Gallery() {
         {/* 취향 결과 비교 토글 */}
         {preferenceSelected && (
           <div style={{
-            marginTop: 10, padding: "8px 12px", borderRadius: 10,
-            background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)",
+            marginTop: 10, padding: "8px 12px", borderRadius: "var(--radius-md)",
+            background: "rgba(107,139,90,0.08)", border: "1px solid rgba(107,139,90,0.3)",
             display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
           }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a" }}>내 취향 반영됨</span>
@@ -372,9 +372,9 @@ export default function Gallery() {
               {(["ai", "preference"] as const).map((v) => (
                 <button key={v} onClick={() => setPreferenceView(v)}
                   style={{
-                    padding: "4px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer",
+                    padding: "4px 12px", borderRadius: "var(--radius-md)", fontSize: 12, cursor: "pointer",
                     border: `1.5px solid ${preferenceView === v ? "#16a34a" : "var(--border)"}`,
-                    background: preferenceView === v ? "rgba(34,197,94,0.2)" : "transparent",
+                    background: preferenceView === v ? "rgba(107,139,90,0.2)" : "transparent",
                     color: preferenceView === v ? "#16a34a" : "var(--text2)",
                     fontWeight: preferenceView === v ? 700 : 400,
                   }}>
@@ -410,7 +410,7 @@ export default function Gallery() {
                 padding: "6px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer",
                 border: `1.5px solid ${viewMode === key ? (key === "excluded" ? "#ef4444" : "var(--accent)") : "var(--border)"}`,
                 background: viewMode === key
-                  ? (key === "excluded" ? "rgba(239,68,68,0.12)" : "rgba(108,99,255,0.15)")
+                  ? (key === "excluded" ? "rgba(239,68,68,0.12)" : "rgba(45,67,86,0.15)")
                   : "transparent",
                 color: viewMode === key
                   ? (key === "excluded" ? "#ef4444" : "var(--accent2)")
@@ -432,10 +432,10 @@ export default function Gallery() {
           background: "rgba(245,158,11,0.1)",
           border: "1px solid rgba(245,158,11,0.4)",
           borderLeft: "4px solid #f59e0b",
-          borderRadius: 12,
+          borderRadius: "var(--radius-lg)",
           display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
         }}>
-          <span style={{ fontSize: 22 }}>📁</span>
+          <span style={{ fontSize: 22 }}>⚠</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#d97706", marginBottom: 2 }}>
               ZIP 다운로드를 하려면 원본 파일을 다시 선택해주세요
@@ -448,7 +448,7 @@ export default function Gallery() {
           <button
             onClick={handleReattachClick}
             style={{
-              padding: "9px 20px", borderRadius: 9, border: "none", cursor: "pointer",
+              padding: "9px 20px", borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer",
               background: "#f59e0b", color: "#fff",
               fontWeight: 700, fontSize: 13, whiteSpace: "nowrap",
             }}
@@ -535,8 +535,8 @@ export default function Gallery() {
                                 onClick={() => togglePhotoSelected(photo.id)}
                                 style={{
                                   position: "absolute", top: 6, left: 6,
-                                  background: "rgba(108,99,255,0.9)", color: "white",
-                                  border: "none", borderRadius: 6, cursor: "pointer",
+                                  background: "rgba(45,67,86,0.9)", color: "white",
+                                  border: "none", borderRadius: "var(--radius-md)", cursor: "pointer",
                                   fontSize: 10, fontWeight: 700, padding: "3px 7px",
                                 }}
                               >
@@ -566,7 +566,7 @@ export default function Gallery() {
                   <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
                     onClick={() => setExpandedGroup(isExpanded ? null : group.id)}>
                     <img src={(selectedEntry ?? topEntry)?.thumbnail} alt=""
-                      style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6, border: "2px solid var(--border)" }} />
+                      style={{ width: 60, height: 60, objectFit: "cover", borderRadius: "var(--radius-md)", border: "2px solid var(--border)" }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{entries.length}장의 유사 컷</div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -580,7 +580,7 @@ export default function Gallery() {
                         padding: "5px 10px", fontSize: 11, fontWeight: 600,
                         background: "transparent",
                         border: "1px solid var(--border)",
-                        borderRadius: 6, cursor: "pointer",
+                        borderRadius: "var(--radius-md)", cursor: "pointer",
                         color: "var(--text-secondary)",
                       }}
                     >비교</button>
@@ -689,7 +689,7 @@ export default function Gallery() {
           position: "fixed", bottom: 76, right: 20, zIndex: 1500,
           background: "var(--bg2)", border: "1px solid var(--border)",
           borderLeft: "4px solid var(--accent)",
-          borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
+          borderRadius: "var(--radius-lg)",
           padding: "14px 18px", maxWidth: 300,
           animation: "slideInBanner 0.4s ease",
         }}>
@@ -729,9 +729,8 @@ export default function Gallery() {
             position: "fixed", bottom: 76, right: 20, zIndex: 1500,
             width: 46, height: 46, borderRadius: "50%",
             background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-            color: "white", border: "none", cursor: "pointer",
+            color: "white", border: "1px solid var(--border-subtle)", cursor: "pointer",
             fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(108,99,255,0.5)",
           }}
           title="내 취향으로 다시 뽑기"
         >↺</button>
@@ -749,7 +748,7 @@ export default function Gallery() {
           <div style={{ position: "relative", width: 72, height: 72 }}>
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: "4px solid rgba(108,99,255,0.2)",
+              border: "4px solid rgba(45,67,86,0.2)",
             }} />
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
@@ -766,7 +765,7 @@ export default function Gallery() {
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
-              AI가 다시 고르는 중...
+              선택 기준 적용 중...
             </div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)" }}>
               가중치·필터 조건으로 사진을 재선별하고 있어요
@@ -780,15 +779,15 @@ export default function Gallery() {
         <div style={{
           position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
           zIndex: 3000,
-          background: "rgba(34,197,94,0.95)",
-          color: "#fff", borderRadius: 12,
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border-subtle)",
+          color: "var(--text-primary)", borderRadius: "var(--radius-lg)",
           padding: "12px 28px",
           fontSize: 15, fontWeight: 700,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.4)",
           animation: "toastIn 0.3s ease",
           whiteSpace: "nowrap",
         }}>
-          ✓ {reextractDoneCount}장 재선별 완료!
+          ✓ {reextractDoneCount}장 재선별 완료
         </div>
       )}
 
@@ -796,8 +795,8 @@ export default function Gallery() {
       {ctxMenu && ctxPhoto && (
         <div ref={ctxRef} style={{
           position: "fixed", top: ctxMenu.y, left: ctxMenu.x, zIndex: 2000,
-          background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 10,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.4)", minWidth: 180, overflow: "hidden",
+          background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
+          minWidth: 180, overflow: "hidden",
         }}>
           <button
             onClick={() => { togglePhotoSelected(ctxMenu.photoId); setCtxMenu(null); }}
@@ -807,7 +806,7 @@ export default function Gallery() {
               color: ctxPhoto.isSelected ? "#ef4444" : "var(--accent2)",
               fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(108,99,255,0.12)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45,67,86,0.12)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
           >
             {ctxPhoto.isSelected ? "✕  선택 제외" : "✓  선택에 포함"}
@@ -819,7 +818,7 @@ export default function Gallery() {
               border: "none", cursor: "pointer", fontSize: 13, color: "var(--text)",
               display: "flex", alignItems: "center", gap: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(108,99,255,0.12)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45,67,86,0.12)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
           >
             🔍  자세히 보기
@@ -828,16 +827,16 @@ export default function Gallery() {
       )}
       <style>{`
         @keyframes slideInBanner {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes spinReextract {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
         @keyframes toastIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+          from { opacity: 0; transform: translateX(-50%); }
+          to   { opacity: 1; transform: translateX(-50%); }
         }
       `}</style>
     </div>

@@ -132,8 +132,7 @@ export default function AppShell() {
           background: "var(--bg2)",
           border: "1px solid var(--border)",
           borderLeft: "4px solid var(--accent)",
-          borderRadius: 14,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          borderRadius: "var(--radius-lg)", 
           padding: "16px 20px",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
@@ -147,7 +146,7 @@ export default function AppShell() {
             <button
               onClick={handleRestore}
               style={{
-                flex: 1, padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer",
+                flex: 1, padding: "9px 0", borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer",
                 background: "linear-gradient(135deg, var(--accent), var(--accent2))",
                 color: "#fff", fontWeight: 700, fontSize: 14,
               }}
@@ -157,7 +156,7 @@ export default function AppShell() {
             <button
               onClick={handleDismissRecovery}
               style={{
-                padding: "9px 18px", borderRadius: 9, cursor: "pointer",
+                padding: "9px 18px", borderRadius: "var(--radius-lg)", cursor: "pointer",
                 border: "1.5px solid var(--border)", background: "transparent",
                 color: "var(--text2)", fontSize: 13,
               }}
@@ -177,7 +176,7 @@ export default function AppShell() {
           fontSize: 12, fontWeight: 600, padding: "5px 12px",
           letterSpacing: "0.02em",
         }}>
-          🎉 딸깍픽스 무료 베타 서비스 중 — 모든 기능을 무료로 이용하세요
+          딸깍픽스 무료 베타 서비스 중 — 모든 기능을 무료로 이용하세요
         </div>
       )}
 

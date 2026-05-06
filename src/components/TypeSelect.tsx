@@ -36,8 +36,8 @@ export default function TypeSelect() {
           {OPTIONS.map(({ type, icon, key }) => (
             <button key={type} onClick={() => setPhotoType(type)}
               style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px",
-                borderRadius: 12, border: `2px solid ${photoType === type ? "var(--accent)" : "var(--border)"}`,
-                background: photoType === type ? "rgba(108,99,255,0.12)" : "var(--bg2)",
+                borderRadius: "var(--radius-lg)", border: `2px solid ${photoType === type ? "var(--accent)" : "var(--border)"}`,
+                background: photoType === type ? "rgba(45,67,86,0.12)" : "var(--bg2)",
                 cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
               <span style={{ fontSize: 32 }}>{icon}</span>
               <div>

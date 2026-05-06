@@ -100,7 +100,7 @@ export default function FeedbackMode() {
 
   // 점수 바 색상
   const barColor = (v: number) =>
-    v >= 0.7 ? "#22c55e" : v >= 0.4 ? "#f59e0b" : "#ef4444";
+    v >= 0.7 ? "var(--high)" : v >= 0.4 ? "#f59e0b" : "#ef4444";
 
   // 피드백 여부 표시
   const currentRating = currentId ? feedbackEntries.get(currentId) : undefined;
@@ -143,7 +143,7 @@ export default function FeedbackMode() {
           onClick={handleApply}
           disabled={!canApply || applying}
           style={{
-            padding: "10px 22px", borderRadius: 10, fontSize: 14, fontWeight: 700,
+            padding: "10px 22px", borderRadius: "var(--radius-md)", fontSize: 14, fontWeight: 700,
             border: "none", cursor: canApply ? "pointer" : "not-allowed",
             background: canApply
               ? "linear-gradient(135deg, var(--accent), var(--accent2))"
@@ -151,7 +151,6 @@ export default function FeedbackMode() {
             color: canApply ? "white" : "var(--text2)",
             opacity: applying ? 0.6 : 1,
             transition: "all 0.2s",
-            boxShadow: canApply ? "0 4px 14px rgba(108,99,255,0.4)" : "none",
           }}
         >
           {applying ? "재추출 중..." : canApply ? "내 취향으로 재추출하기 →" : `${FEEDBACK_MIN}장 평가 후 활성화`}
@@ -172,12 +171,12 @@ export default function FeedbackMode() {
             ↩ 되돌리기
           </button>
         </div>
-        <div style={{ height: 6, borderRadius: 3, background: "var(--bg3)", overflow: "hidden" }}>
+        <div style={{ height: 6, borderRadius: "var(--radius-sm)", background: "var(--bg3)", overflow: "hidden" }}>
           <div style={{
-            height: "100%", borderRadius: 3, transition: "width 0.3s",
+            height: "100%", borderRadius: "var(--radius-sm)", transition: "width 0.3s",
             width: `${Math.max(2, progress * 100)}%`,
             background: canApply
-              ? "linear-gradient(90deg, #22c55e, #16a34a)"
+              ? "linear-gradient(90deg, var(--high), #16a34a)"
               : "linear-gradient(90deg, var(--accent), var(--accent2))",
           }} />
         </div>
@@ -189,8 +188,8 @@ export default function FeedbackMode() {
           margin: "8px 20px 0",
           padding: "8px 14px",
           borderRadius: 8,
-          background: "rgba(34,197,94,0.08)",
-          border: "1px solid rgba(34,197,94,0.25)",
+          background: "rgba(107,139,90,0.08)",
+          border: "1px solid rgba(107,139,90,0.25)",
           display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap",
           flexShrink: 0,
         }}>
@@ -199,7 +198,7 @@ export default function FeedbackMode() {
             const labels: Record<string, string> = { eyeOpen: "눈뜸", sharpness: "선명도", expression: "표정", facing: "정면" };
             const diff = previewWeights[k] - weights[k];
             const arrow = diff > 0.03 ? "↑" : diff < -0.03 ? "↓" : "─";
-            const color = diff > 0.03 ? "#22c55e" : diff < -0.03 ? "#ef4444" : "var(--text2)";
+            const color = diff > 0.03 ? "var(--high)" : diff < -0.03 ? "#ef4444" : "var(--text2)";
             return (
               <span key={k} style={{ fontSize: 11, color }}>
                 {labels[k]} {Math.round(previewWeights[k] * 100)}% {arrow}
@@ -238,10 +237,10 @@ export default function FeedbackMode() {
                 {/* 사진 */}
                 <div style={{
                   position: "relative",
-                  borderRadius: 14,
+                  borderRadius: "var(--radius-lg)",
                   overflow: "hidden",
                   border: currentRating === true
-                    ? "3px solid #22c55e"
+                    ? "3px solid var(--high)"
                     : currentRating === false
                     ? "3px solid #ef4444"
                     : "3px solid var(--border)",
@@ -262,7 +261,7 @@ export default function FeedbackMode() {
                     <div style={{
                       position: "absolute", inset: 0,
                       background: currentRating
-                        ? "rgba(34,197,94,0.15)"
+                        ? "rgba(107,139,90,0.15)"
                         : "rgba(239,68,68,0.15)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 64,
@@ -273,7 +272,7 @@ export default function FeedbackMode() {
                   {/* 진행 카운터 */}
                   <div style={{
                     position: "absolute", top: 10, right: 10,
-                    background: "rgba(0,0,0,0.55)", borderRadius: 20,
+                    background: "rgba(0,0,0,0.55)", borderRadius: "var(--radius-sm)",
                     padding: "3px 10px", fontSize: 11, color: "white",
                   }}>
                     {cursor + 1} / {feedbackSamples.length}
@@ -284,7 +283,7 @@ export default function FeedbackMode() {
                 {portraitScore && (
                   <div style={{
                     marginTop: 10, padding: "10px 14px",
-                    background: "var(--bg2)", borderRadius: 10,
+                    background: "var(--bg2)", borderRadius: "var(--radius-md)",
                     border: "1px solid var(--border)",
                     display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px",
                   }}>
@@ -296,8 +295,8 @@ export default function FeedbackMode() {
                     ] as [string, number][]).map(([label, val]) => (
                       <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 11, color: "var(--text2)", width: 42, flexShrink: 0 }}>{label}</span>
-                        <div style={{ flex: 1, height: 5, background: "var(--bg3)", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ width: `${val * 100}%`, height: "100%", background: barColor(val), borderRadius: 3 }} />
+                        <div style={{ flex: 1, height: 5, background: "var(--bg3)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
+                          <div style={{ width: `${val * 100}%`, height: "100%", background: barColor(val), borderRadius: "var(--radius-sm)" }} />
                         </div>
                         <span style={{ fontSize: 10, color: barColor(val), fontWeight: 700, width: 28, textAlign: "right" }}>
                           {Math.round(val * 100)}
@@ -340,7 +339,7 @@ export default function FeedbackMode() {
                 onClick={handleSkip}
                 disabled={isLast}
                 style={{
-                  padding: "10px 20px", borderRadius: 10, fontSize: 13,
+                  padding: "10px 20px", borderRadius: "var(--radius-md)", fontSize: 13,
                   border: "1.5px solid var(--border)", background: "transparent",
                   color: isLast ? "var(--border)" : "var(--text2)",
                   cursor: isLast ? "not-allowed" : "pointer",
@@ -353,8 +352,8 @@ export default function FeedbackMode() {
                 onClick={() => handleRate(true)}
                 style={{
                   width: 64, height: 64, borderRadius: "50%",
-                  border: "2px solid #22c55e",
-                  background: currentRating === true ? "#22c55e" : "transparent",
+                  border: "2px solid var(--high)",
+                  background: currentRating === true ? "var(--high)" : "transparent",
                   fontSize: 26, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.15s",

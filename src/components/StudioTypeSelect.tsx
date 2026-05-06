@@ -10,21 +10,17 @@ import type { AppState } from "../lib/types";
 const OPTIONS = [
   {
     flow: "B" as const,
-    emoji: "📂",
     title: "셀렉용 폴더 있어요",
     desc: "스튜디오에서 의상·배경별로 정리된\n폴더를 받으셨나요?\n\n폴더 구조 그대로 셀렉 후,\n앨범 배치까지 이어서 진행합니다.",
-    steps: ["폴더 업로드", "AI 셀렉", "앨범 배치"],
+    steps: ["폴더 업로드", "셀렉", "앨범 배치"],
     cta: "폴더 올리고 앨범 배치까지",
-    accentRgb: "108,99,255",
   },
   {
     flow: "C" as const,
-    emoji: "🖼",
     title: "사진만 있어요",
-    desc: "폴더 없이 촬영 사진만 있으신가요?\n\n의상·배경별로 직접 드롭하면\n셀렉 결과를 ZIP으로 받을 수 있어요.",
-    steps: ["사진/폴더 업로드", "AI 셀렉", "ZIP 저장"],
+    desc: "폴더 없이 촬영 사진만 있으신가요?\n\n의상·배경별로 직접 드롭하면\n셀렉 결과를 ZIP으로 받습니다.",
+    steps: ["사진/폴더 업로드", "셀렉", "ZIP 저장"],
     cta: "사진 올리고 셀렉만",
-    accentRgb: "124,111,247",
   },
 ] as const;
 
@@ -84,43 +80,30 @@ export default function StudioTypeSelect() {
               onClick={() => handleSelect(opt.flow)}
               style={{
                 display: "flex", flexDirection: "column",
-                padding: "28px 22px 22px",
-                background: "var(--bg2)",
-                border: "1px solid var(--border)",
-                borderRadius: 18, cursor: "pointer", textAlign: "left",
-                transition: "transform 0.18s, box-shadow 0.18s, border-color 0.18s",
+                padding: "var(--space-8) var(--space-6) var(--space-6)",
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)", cursor: "pointer", textAlign: "left",
+                transition: "border-color var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard)",
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = "translateY(-5px)";
-                el.style.boxShadow = `0 20px 48px rgba(${opt.accentRgb},0.22)`;
-                el.style.borderColor = `rgba(${opt.accentRgb},0.55)`;
+                el.style.borderColor = "var(--accent)";
+                el.style.opacity = "0.95";
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = "";
-                el.style.boxShadow = "";
-                el.style.borderColor = "var(--border)";
+                el.style.borderColor = "var(--border-subtle)";
+                el.style.opacity = "1";
               }}
             >
-              {/* 아이콘 */}
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: `rgba(${opt.accentRgb},0.12)`,
-                border: `1px solid rgba(${opt.accentRgb},0.25)`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26, marginBottom: 16,
-              }}>
-                {opt.emoji}
-              </div>
-
               {/* 제목 */}
               <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, letterSpacing: "-0.025em" }}>
                 {opt.title}
               </div>
 
               {/* 설명 */}
-              <p style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.7, whiteSpace: "pre-line", flex: 1, marginBottom: 20 }}>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, whiteSpace: "pre-line", flex: 1, marginBottom: 20 }}>
                 {opt.desc}
               </p>
 
@@ -132,14 +115,16 @@ export default function StudioTypeSelect() {
                 {opt.steps.map((step, i) => (
                   <span key={step} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20,
-                      background: `rgba(${opt.accentRgb},0.12)`,
-                      color: `rgba(${opt.accentRgb},1)`,
+                      fontSize: 11, fontWeight: 700, padding: "3px 8px",
+                      borderRadius: "var(--radius-sm)",
+                      background: "var(--accent-soft)",
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-mono)",
                     }}>
                       {step}
                     </span>
                     {i < opt.steps.length - 1 && (
-                      <span style={{ fontSize: 10, color: "var(--text2)" }}>→</span>
+                      <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>→</span>
                     )}
                   </span>
                 ))}
@@ -147,9 +132,10 @@ export default function StudioTypeSelect() {
 
               {/* CTA */}
               <button style={{
-                width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: "pointer",
-                background: `linear-gradient(135deg, rgba(${opt.accentRgb},0.85), rgba(${opt.accentRgb},1))`,
-                color: "#fff", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
+                width: "100%", padding: "12px 0",
+                borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer",
+                background: "var(--accent)",
+                color: "var(--bg-base)", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
                 pointerEvents: "none",
               }}>
                 {opt.cta}

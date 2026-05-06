@@ -199,8 +199,7 @@ export default function Analysis() {
           <h2 style={{
             fontSize: 22, fontWeight: 700, margin: 0,
             opacity: story.visible ? 1 : 0,
-            transform: story.visible ? "translateY(0)" : "translateY(6px)",
-            transition: "opacity 0.35s ease, transform 0.35s ease",
+            transition: "opacity 0.35s ease",
           }}>{story.text}</h2>
         </div>
 
@@ -228,16 +227,15 @@ export default function Analysis() {
 
         {/* 프로그레스 바 */}
         <div style={{
-          background: "var(--bg2)", borderRadius: 999, height: 8,
+          background: "var(--bg2)", borderRadius: "50%", height: 8,
           overflow: "hidden", marginBottom: 10,
           border: "1px solid var(--border)",
         }}>
           <div style={{
-            height: "100%", borderRadius: 999,
+            height: "100%", borderRadius: "50%",
             background: "linear-gradient(90deg, var(--accent), var(--accent2))",
             width: `${Math.max(4, pct)}%`,
             transition: "width 0.4s ease",
-            boxShadow: "0 0 8px rgba(139,92,246,0.5)",
           }} />
         </div>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 32 }}>
@@ -247,7 +245,7 @@ export default function Analysis() {
         {/* 팁 카드 */}
         <div style={{
           display: "flex", alignItems: "flex-start", gap: 10,
-          padding: "14px 16px", borderRadius: 12,
+          padding: "14px 16px", borderRadius: "var(--radius-lg)", 
           background: "var(--bg2)",
           border: "1px solid var(--border)",
           textAlign: "left",

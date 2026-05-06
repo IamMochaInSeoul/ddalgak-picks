@@ -32,8 +32,7 @@ export default function DriveDownloadBanner() {
       background: "var(--bg2)",
       border: "1px solid var(--border)",
       borderLeft: "4px solid var(--accent)",
-      borderRadius: 14,
-      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+      borderRadius: "var(--radius-lg)", 
       padding: "14px 18px",
       display: "flex",
       flexDirection: "column",
@@ -117,7 +116,7 @@ export default function DriveDownloadBanner() {
               color: "var(--text)", cursor: "pointer",
             }}
           >
-            📁 폴더 더 추가하기
+            폴더 더 추가하기
           </button>
         )}
         {/* 다운로드 완료 후 folderUpload가 아닌 화면이라면 "분석 시작" 버튼 */}

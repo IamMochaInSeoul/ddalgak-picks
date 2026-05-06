@@ -538,7 +538,7 @@ export default function AlbumContainer() {
           {/* 파싱 중 */}
           {parsingTemplate && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-              background: "rgba(108,99,255,0.08)", border: "1px solid rgba(108,99,255,0.25)", borderRadius: 10 }}>
+              background: "rgba(45,67,86,0.08)", border: "1px solid rgba(45,67,86,0.25)", borderRadius: "var(--radius-md)", }}>
               <div style={{ width: 20, height: 20, borderRadius: "50%",
                 border: "3px solid transparent", borderTopColor: "var(--accent)",
                 animation: "spinReextract 0.9s linear infinite", flexShrink: 0 }} />
@@ -548,8 +548,8 @@ export default function AlbumContainer() {
 
           {/* 파싱 완료 — 성공 */}
           {templateParsed && slots.length > 0 && !parsingTemplate && (
-            <div style={{ background: "rgba(34,197,94,0.08)", border: "1.5px solid rgba(34,197,94,0.4)",
-              borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+            <div style={{ background: "rgba(107,139,90,0.08)", border: "1.5px solid rgba(107,139,90,0.4)",
+              borderRadius: "var(--radius-lg)", padding: "16px 18px", marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <span style={{ fontSize: 22 }}>✅</span>
                 <div>
@@ -560,14 +560,14 @@ export default function AlbumContainer() {
                 </div>
                 <button onClick={clearSlots}
                   style={{ marginLeft: "auto", fontSize: 12, color: "var(--text2)", background: "none",
-                    border: "1px solid var(--border)", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                    border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "4px 10px", cursor: "pointer" }}>
                   초기화
                 </button>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {slotGroups.map(([groupName, groupSlots]) => (
                   <div key={groupName} style={{
-                    background: "var(--bg)", border: "1px solid rgba(34,197,94,0.35)",
+                    background: "var(--bg)", border: "1px solid rgba(107,139,90,0.35)",
                     borderRadius: 8, padding: "8px 14px", fontSize: 13,
                   }}>
                     <span style={{ marginRight: 6 }}>{groupName === "액자" ? "🖼" : "📖"}</span>
@@ -585,7 +585,7 @@ export default function AlbumContainer() {
           {/* 파싱 완료 — 실패 */}
           {templateParsed && slots.length === 0 && !parsingTemplate && parseError && (
             <div style={{ background: "rgba(239,68,68,0.08)", border: "1.5px solid rgba(239,68,68,0.35)",
-              borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+              borderRadius: "var(--radius-lg)", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", gap: 12 }}>
                 <span style={{ fontSize: 20 }}>⚠️</span>
                 <div>
@@ -622,18 +622,18 @@ export default function AlbumContainer() {
                 <label style={{ fontSize: 11, color: "var(--text2)", display: "block", marginBottom: 3 }}>그룹명 (선택)</label>
                 <input value={manualGroupName} onChange={(e) => setManualGroupName(e.target.value)}
                   placeholder="예: 앨범 10X10 - 26P"
-                  style={{ padding: "6px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 200 }} />
+                  style={{ padding: "6px 10px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 200 }} />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: "var(--text2)", display: "block", marginBottom: 3 }}>총 페이지 수</label>
                 <input type="number" value={manualPageCount} min={2} max={100} step={2}
                   onChange={(e) => setManualPageCount(parseInt(e.target.value) || 26)}
-                  style={{ padding: "6px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 80 }} />
+                  style={{ padding: "6px 10px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 80 }} />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: "var(--text2)", display: "block", marginBottom: 3 }}>장당 사진 수</label>
                 <select value={manualCapacity} onChange={(e) => setManualCapacity(parseInt(e.target.value))}
-                  style={{ padding: "6px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13 }}>
+                  style={{ padding: "6px 10px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13 }}>
                   {[1,2,3,4].map((n) => <option key={n} value={n}>{n}장</option>)}
                 </select>
               </div>
@@ -646,7 +646,7 @@ export default function AlbumContainer() {
                 <label style={{ fontSize: 11, color: "var(--text2)", display: "block", marginBottom: 3 }}>슬롯명 (액자 등)</label>
                 <input value={manualSlotName} onChange={(e) => setManualSlotName(e.target.value)}
                   placeholder="예: 액자 미니 5구"
-                  style={{ padding: "6px 10px", borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 200 }} />
+                  style={{ padding: "6px 10px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: "var(--bg2)", color: "var(--text)", fontSize: 13, width: 200 }} />
               </div>
               <button className="btn-secondary" style={{ fontSize: 13, padding: "7px 14px" }}
                 onClick={addSingleSlot} disabled={!manualSlotName}>
@@ -671,7 +671,7 @@ export default function AlbumContainer() {
                 onClick={handleGoogleDrive}
                 disabled={processingSource || driveLoading}
                 style={{
-                  fontSize: 13, padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                  fontSize: 13, padding: "8px 14px", borderRadius: "var(--radius-md)", cursor: "pointer",
                   border: "1.5px solid var(--border)", background: "var(--bg2)",
                   color: "var(--text)", fontWeight: 600,
                   display: "flex", alignItems: "center", gap: 6,
@@ -690,7 +690,7 @@ export default function AlbumContainer() {
                 onClick={() => sourceInputRef.current?.click()}>
                 {processingSource
                   ? `분석 중... ${processingProgress.current}/${processingProgress.total} (${processingProgress.label})`
-                  : "📁 폴더 추가"}
+                  : "폴더 추가"}
               </button>
             </div>
           </div>
@@ -698,8 +698,8 @@ export default function AlbumContainer() {
           {/* 진행 중 배너 */}
           {(processingSource || driveLoading) && (
             <div style={{ marginBottom: 12, padding: "12px 16px",
-              background: "rgba(108,99,255,0.08)", border: "1px solid rgba(108,99,255,0.25)",
-              borderRadius: 10, display: "flex", alignItems: "center", gap: 12 }}>
+              background: "rgba(45,67,86,0.08)", border: "1px solid rgba(45,67,86,0.25)",
+              borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%",
                 border: "3px solid transparent", borderTopColor: "var(--accent)",
                 animation: "spinReextract 0.9s linear infinite", flexShrink: 0 }} />
@@ -730,8 +730,8 @@ export default function AlbumContainer() {
             onDrop={handleFolderDrop}
             style={{
               border: `2px dashed ${isDragOver ? "var(--accent)" : "var(--border)"}`,
-              borderRadius: 12, padding: "20px",
-              background: isDragOver ? "rgba(108,99,255,0.08)" : "transparent",
+              borderRadius: "var(--radius-lg)", padding: "20px",
+              background: isDragOver ? "rgba(45,67,86,0.08)" : "transparent",
               textAlign: "center", marginBottom: 14, transition: "all 0.2s",
             }}
           >
@@ -754,7 +754,7 @@ export default function AlbumContainer() {
               {sources.map((src, idx) => (
                 <div key={src.id} style={{
                   display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                  borderRadius: 10, background: "var(--bg2)", border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)", background: "var(--bg2)", border: "1px solid var(--border)",
                 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <button onClick={() => moveSource(src.id, -1)} disabled={idx === 0}
@@ -768,12 +768,12 @@ export default function AlbumContainer() {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 14, fontWeight: 700, color: "var(--accent2)" }}>{idx + 1}</div>
                   <input value={src.name} onChange={(e) => renameSource(src.id, e.target.value)}
-                    style={{ flex: 1, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--border)",
+                    style={{ flex: 1, padding: "5px 10px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)",
                       background: "transparent", color: "var(--text)", fontSize: 14, fontWeight: 600 }} />
                   <div style={{ display: "flex", gap: 6 }}>
                     {src.photos.slice(0, 2).map((p) => (
                       <img key={p.id} src={p.thumbnail} alt=""
-                        style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                        style={{ width: 40, height: 40, objectFit: "cover", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }} />
                     ))}
                   </div>
                   <span style={{ fontSize: 12, color: "var(--text2)" }}>{src.photos.length}장</span>
@@ -804,8 +804,8 @@ export default function AlbumContainer() {
         {showDriveSetup && (
           <div style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.7)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16,
-              padding: "28px 32px", maxWidth: 520, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
+              padding: "28px 32px", maxWidth: 520, width: "100%" }}>
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>☁ Google Drive 연동 설정</div>
               <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 20, lineHeight: 1.7 }}>
                 Google Drive 연동은 <strong>무료</strong>이지만, Google Cloud 계정에서 API 키를 발급해야 합니다.<br />
@@ -828,13 +828,13 @@ export default function AlbumContainer() {
               ))}
               <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
                 <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer"
-                  style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRadius: 9,
+                  style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRadius: "var(--radius-lg)",
                     background: "linear-gradient(135deg,var(--accent),var(--accent2))", color: "#fff",
                     textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
                   Google Cloud Console 열기 →
                 </a>
                 <button onClick={() => setShowDriveSetup(false)}
-                  style={{ padding: "10px 18px", borderRadius: 9, border: "1.5px solid var(--border)",
+                  style={{ padding: "10px 18px", borderRadius: "var(--radius-lg)", border: "1.5px solid var(--border)",
                     background: "transparent", color: "var(--text2)", cursor: "pointer", fontSize: 13 }}>
                   닫기
                 </button>
@@ -900,12 +900,12 @@ export default function AlbumContainer() {
                   const pct = filled / slot.capacity;
                   return (
                     <div key={slot.id} onClick={() => setActiveSlotId(slot.id)}
-                      style={{ borderRadius: 10, padding: "10px 12px", cursor: "pointer",
-                        border: `2px solid ${isActive ? "var(--accent)" : filled === slot.capacity ? "rgba(34,197,94,0.4)" : "var(--border)"}`,
-                        background: isActive ? "rgba(108,99,255,0.12)" : "var(--bg)", transition: "border-color 0.15s" }}>
+                      style={{ borderRadius: "var(--radius-md)", padding: "10px 12px", cursor: "pointer",
+                        border: `2px solid ${isActive ? "var(--accent)" : filled === slot.capacity ? "rgba(107,139,90,0.4)" : "var(--border)"}`,
+                        background: isActive ? "rgba(45,67,86,0.12)" : "var(--bg)", transition: "border-color 0.15s" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: filled > 0 ? 8 : 0 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{slot.slotName}</span>
-                        <span style={{ fontSize: 11, color: pct === 1 ? "#22c55e" : "var(--text2)" }}>{filled}/{slot.capacity}장</span>
+                        <span style={{ fontSize: 11, color: pct === 1 ? "var(--high)" : "var(--text2)" }}>{filled}/{slot.capacity}장</span>
                         <div style={{ display: "flex", gap: 3 }}>
                           {Array.from({ length: slot.capacity }).map((_, i) => (
                             <div key={i} style={{ width: 7, height: 7, borderRadius: "50%",
@@ -921,7 +921,7 @@ export default function AlbumContainer() {
                             return (
                               <div key={pid} style={{ position: "relative" }}>
                                 <img src={photo.thumbnail} alt=""
-                                  style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                                  style={{ width: 52, height: 52, objectFit: "cover", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }} />
                                 <button onClick={(e) => { e.stopPropagation(); unassignPhoto(slot.id, pid); }}
                                   style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16,
                                     borderRadius: "50%", background: "#ef4444", color: "white", border: "none",
@@ -945,15 +945,15 @@ export default function AlbumContainer() {
           <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)",
             display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", background: "var(--bg)" }}>
             <button onClick={() => setActiveSourceId(null)}
-              style={{ padding: "5px 14px", borderRadius: 7, fontSize: 12, cursor: "pointer",
+              style={{ padding: "5px 14px", borderRadius: "var(--radius-lg)", fontSize: 12, cursor: "pointer",
                 border: `1.5px solid ${activeSourceId === null ? "var(--accent)" : "var(--border)"}`,
-                background: activeSourceId === null ? "rgba(108,99,255,0.15)" : "transparent",
+                background: activeSourceId === null ? "rgba(45,67,86,0.15)" : "transparent",
                 color: activeSourceId === null ? "var(--accent2)" : "var(--text2)", fontWeight: 600 }}>전체</button>
             {sources.map((src) => (
               <button key={src.id} onClick={() => setActiveSourceId(src.id)}
-                style={{ padding: "5px 14px", borderRadius: 7, fontSize: 12, cursor: "pointer",
+                style={{ padding: "5px 14px", borderRadius: "var(--radius-lg)", fontSize: 12, cursor: "pointer",
                   border: `1.5px solid ${activeSourceId === src.id ? "var(--accent)" : "var(--border)"}`,
-                  background: activeSourceId === src.id ? "rgba(108,99,255,0.15)" : "transparent",
+                  background: activeSourceId === src.id ? "rgba(45,67,86,0.15)" : "transparent",
                   color: activeSourceId === src.id ? "var(--accent2)" : "var(--text2)", fontWeight: 600 }}>
                 {src.name} ({src.photos.length})
               </button>
@@ -975,7 +975,7 @@ export default function AlbumContainer() {
                   return (
                     <div key={photo.id} onClick={() => assignPhoto(photo.id)}
                       style={{ position: "relative", cursor: "pointer", borderRadius: 8, overflow: "hidden",
-                        border: `2px solid ${isActiveSlotPhoto ? "var(--accent)" : isAssigned ? "rgba(34,197,94,0.6)" : "transparent"}`,
+                        border: `2px solid ${isActiveSlotPhoto ? "var(--accent)" : isAssigned ? "rgba(107,139,90,0.6)" : "transparent"}`,
                         opacity: isAssigned && !isActiveSlotPhoto ? 0.55 : 1, transition: "opacity 0.15s, border-color 0.15s" }}>
                       <img src={photo.thumbnail} alt={photo.file.name}
                         style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
@@ -985,7 +985,7 @@ export default function AlbumContainer() {
                       </div>
                       {(isActiveSlotPhoto || (isAssigned && !isActiveSlotPhoto)) && (
                         <div style={{ position: "absolute", top: 4, right: 4,
-                          background: isActiveSlotPhoto ? "var(--accent)" : "#22c55e", borderRadius: "50%",
+                          background: isActiveSlotPhoto ? "var(--accent)" : "var(--high)", borderRadius: "50%",
                           width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 11, color: "white", fontWeight: 700 }}>✓</div>
                       )}
