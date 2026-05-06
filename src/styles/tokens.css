@@ -48,15 +48,15 @@
     "JetBrains Mono", "IBM Plex Mono", "SF Mono",
     ui-monospace, monospace;
 
-  /* 스케일 — 본문은 더 작게, 헤드라인은 더 크게 (콘트라스트 강화) */
+  /* 스케일 — clamp()로 모바일 자동 축소, 데스크톱 max값은 기존과 동일 */
   --text-xs:   12px;
   --text-sm:   13px;
-  --text-base: 15px;
-  --text-md:   18px;
-  --text-lg:   24px;
-  --text-xl:   36px;
-  --display-1: 56px;
-  --display-2: 80px;
+  --text-base: clamp(15px, 1.5vw, 16px);
+  --text-md:   clamp(16px, 1.6vw, 18px);
+  --text-lg:   clamp(20px, 2.2vw, 24px);
+  --text-xl:   clamp(24px, 3.5vw, 36px);
+  --display-1: clamp(36px, 5vw, 56px);
+  --display-2: clamp(48px, 7vw, 80px);
 
   --leading-tight: 1.1;
   --leading-base:  1.55;
@@ -71,9 +71,9 @@
   --space-6:  24px;
   --space-8:  32px;
   --space-12: 48px;
-  --space-16: 64px;
-  --space-24: 96px;
-  --space-32: 128px;
+  --space-16: clamp(32px, 5vw, 64px);
+  --space-24: clamp(48px, 7vw, 96px);
+  --space-32: clamp(64px, 9vw, 128px);
 
   /* ── Radii & Shadow ─────────────────────────────────────────────────────── */
   --radius-sm:    2px;   /* 버튼·인풋 — 통통 튀지 않게 */
@@ -90,4 +90,10 @@
   --dur-fast: 120ms;   /* 호버 */
   --dur-base: 240ms;   /* 모달·탭 전환 */
   --dur-slow: 480ms;   /* 페이지 전환·큰 reveal */
+
+  /* ── Breakpoints (DESIGN_DIRECTION §10-1) ───────────────────────────────── */
+  --bp-mobile:  480px;
+  --bp-tablet:  768px;
+  --bp-desktop: 1024px;
+  --bp-wide:    1280px;   /* 디자인 기준 */
 }

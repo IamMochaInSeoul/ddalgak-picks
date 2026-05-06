@@ -43,6 +43,33 @@ html, body {
   font-family:  var(--font-sans);
   font-size:    var(--text-base);
   line-height:  var(--leading-base);
+
+  /* iOS Safari 기본 처리 (DESIGN_DIRECTION §10-5) */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 100dvh 사용 가능 환경 우대 (iOS 16+ Dynamic Viewport) */
+@supports (height: 100dvh) {
+  .full-height {
+    min-height: 100dvh;
+  }
+}
+@supports not (height: 100dvh) {
+  .full-height {
+    min-height: 100vh;
+  }
+}
+
+/* Sticky CTA 영역에서 iOS Safe Area 보장 */
+.sticky-cta {
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+}
+
+/* 버튼·카드 클릭 영역에서 300ms 딜레이 제거 */
+button, [role="button"], .btn-primary, .btn-secondary, .photo-card {
+  touch-action: manipulation;
 }
 
 .card {
