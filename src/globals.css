@@ -10,8 +10,8 @@
  * - .btn-primary, .photo-card.selected, .badge-high 등은 --accent(금색)을 사용.
  *   기존 보라색 인상이 금색으로 바뀐다. 이는 의도된 톤 전환이며,
  *   Stage B에서 버튼·배지 클래스 전체를 재설계한다.
- * - Landing.tsx 카드의 accentRgb 값(108,99,255)은 보라색 hard-coded.
- *   Stage B에서 골드 RGB(201,169,97)로 교체 예정.
+ * - Landing.tsx 카드의 accentRgb 값은 제거됨 (v0.5.1-pre 갭 패치).
+ *   잉크 블루(#2D4356)로 전환 완료.
  */
 
 :root {
@@ -24,8 +24,8 @@
   --border:     var(--border-subtle);
 
   /* 액센트: 보라에서 금색으로 전환 (의도된 큐레이터 톤 변경) */
-  --accent:     var(--accent);        /* #C9A961 */
-  --accent2:    var(--accent-dim);    /* #D4BC82 */
+  --accent:     var(--accent);        /* #2D4356 (잉크 블루) */
+  --accent2:    var(--accent-dim);    /* #3E5670 */
 
   /* 상태 컬러는 기존 유지 (갤러리 배지 등에서 사용) */
   --high: #6B8B5A;   /* 차분한 올리브 그린, 형광 회피 */
