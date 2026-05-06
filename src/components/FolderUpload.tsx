@@ -3,11 +3,11 @@
  * 여러 폴더를 드롭/반복 선택 → 폴더별 FolderSession 생성 후 분석 시작
  *
  * 폴더 등록 경로:
- *   A. 드래그앤드롭 → onDrop → processFolderEntries (여러 폴더 한번에)
- *   B. 버튼 클릭 → webkitdirectory 피커 → onFolderInputChange (한 번에 폴더 1개, 반복 가능)
+ *   A. 드래그앤드롭 → onDrop → processFolderEntries (여러 폴더 동시 등록 가능)
+ *   B. 버튼 클릭 → webkitdirectory 피커 → onFolderInputChange (폴더 1개씩, 반복 가능)
  *
  * 주의:
- *   - webkitdirectory 피커는 한 번에 폴더 1개만 선택 가능 (브라우저 제약)
+ *   - webkitdirectory 피커는 폴더를 1개씩만 선택 가능 (브라우저 제약)
  *   - <input>에 accept 속성을 쓰면 webkitdirectory와 충돌해 files가 비어버림 → 제거
  *   - 같은 폴더 재선택 시 onChange가 발화하지 않는 Chrome 버그 → inputKey로 매번 remount
  */
