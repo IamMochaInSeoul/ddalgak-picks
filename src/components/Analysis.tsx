@@ -129,8 +129,8 @@ export default function Analysis() {
         const allPhotos = [...photos.values()];
         const selectedCount = allPhotos.filter((p) => p.isSelected).length;
         recordSession({ processed: allPhotos.length, selected: selectedCount, flow: "A" });
-        const clusteringOn = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "true";
-        setStep(clusteringOn && personClusters.size > 0 ? "personSelect" : "gallery");
+        const clusteringOff = import.meta.env.VITE_FEATURE_PERSON_CLUSTERING === "false";
+        setStep(!clusteringOff && personClusters.size > 0 ? "personSelect" : "gallery");
       })
       .catch((err) => {
         console.error("[ddalgak-picks] Analysis failed:", err);

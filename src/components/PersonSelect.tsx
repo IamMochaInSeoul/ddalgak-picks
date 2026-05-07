@@ -5,7 +5,7 @@
  * 진입: 분석 파이프라인의 얼굴 감지 완료 직후, 갤러리 진입 직전.
  * 큐레이터 톤 디자인 (DESIGN_DIRECTION 기준).
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useStore } from "../lib/store";
 import { saveHeroPersonName, loadHeroPersonNames } from "../lib/userProfile";
 import type { AppState, PersonCluster } from "../lib/types";
@@ -32,6 +32,13 @@ export default function PersonSelect() {
 
   // faceCount 내림차순 정렬
   const clusters = [...personClusters.values()].sort((a, b) => b.faceCount - a.faceCount);
+
+  // 0명일 때만 자동 스킵 — 1명 이상이면 반드시 화면 노출
+  useEffect(() => {
+    if (clusters.length === 0) {
+      setStep(flow === "B" ? "folderGallery" : "gallery");
+    }
+  }, [clusters.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getThumbnail = useCallback((cluster: PersonCluster): string => {
     let photo = photos.get(cluster.representativePhotoId);
@@ -114,7 +121,7 @@ export default function PersonSelect() {
           letterSpacing: "-0.02em",
           lineHeight: 1.3,
         }}>
-          사진 속 인물을 만났습니다.
+          {clusters.length === 1 ? "이 분이 주인공이에요. 맞나요?" : "누구를 중심으로 셀렉할까요?"}
         </h1>
         <p style={{
           fontSize: 15,
@@ -122,10 +129,10 @@ export default function PersonSelect() {
           lineHeight: 1.7,
           margin: 0,
         }}>
-          중심에 둘 인물을 골라주세요.
+          선택한 인물이 등장하는 컷에 가산점을 주어 베스트로 추립니다.{" "}
           {clusters.length > 0 && (
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>
-              {" "}({clusters.length}명 감지됨)
+              ({clusters.length}명 감지됨)
             </span>
           )}
         </p>
@@ -134,8 +141,31 @@ export default function PersonSelect() {
           color: "var(--text-tertiary)",
           marginTop: 6,
         }}>
-          더블클릭하면 이름을 붙일 수 있습니다
+          선택하지 않으면 등장 횟수 1위 인물이 자동 주인공이 됩니다. 더블클릭하면 이름을 붙일 수 있습니다.
         </p>
+        {/* 폴더별 인물 진척 표 — sourceSessionIds가 구현된 경우만 노출 */}
+        {folderSessions.length > 0 && clusters.some((c) => (c as PersonCluster & { sourceSessionIds?: string[] }).sourceSessionIds) && (
+          <div style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            fontFamily: "var(--font-mono)",
+            marginTop: 12,
+            textAlign: "left",
+          }}>
+            {folderSessions.map((s) => {
+              const count = clusters.filter((c) => {
+                const ext = c as PersonCluster & { sourceSessionIds?: string[] };
+                return ext.sourceSessionIds?.includes(s.id);
+              }).length;
+              return (
+                <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
+                  <span>{s.folderName}</span>
+                  <span>{count}명 감지</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ─── 인물 카드 그리드 ─────────────────────────────── */}
@@ -368,30 +398,16 @@ export default function PersonSelect() {
         width: "100%",
         maxWidth: 600,
         display: "flex",
-        gap: 10,
+        flexDirection: "column",
+        gap: 12,
+        alignItems: "center",
       }}>
-        <button
-          onClick={() => handleConfirm(true)}
-          style={{
-            flex: 1,
-            height: 50,
-            borderRadius: "var(--radius-sm, 2px)",
-            fontSize: 14,
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--text-secondary)",
-            cursor: "pointer",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          건너뛰기
-        </button>
         <button
           onClick={() => handleConfirm(false)}
           disabled={selectedIds.length === 0}
           style={{
-            flex: 2,
-            height: 50,
+            width: "100%",
+            height: 52,
             borderRadius: "var(--radius-sm, 2px)",
             fontSize: 15,
             fontWeight: 700,
@@ -403,9 +419,22 @@ export default function PersonSelect() {
             fontFamily: "var(--font-body)",
           }}
         >
-          {selectedIds.length > 0
-            ? `셀렉 시작 →`
-            : "인물을 선택해주세요"}
+          {selectedIds.length > 0 ? "셀렉 시작" : "인물을 선택해주세요"}
+        </button>
+        <button
+          onClick={() => handleConfirm(true)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--text-tertiary)",
+            fontSize: 13,
+            padding: "4px 0",
+            textDecoration: "underline",
+            fontFamily: "var(--font-body)",
+          }}
+        >
+          건너뛰기 (등장 1위 인물이 자동 주인공이 됩니다)
         </button>
       </div>
 
