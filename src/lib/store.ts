@@ -22,6 +22,7 @@ import {
 } from "./types";
 import type { PersistedSession } from "./sessionPersist";
 import { applyHeroScores } from "./heroScore";
+import { saveFolderSession as saveToOpfs } from "./opfsStore";
 
 interface AppActions {
   setStep: (step: AppState["step"]) => void;
@@ -255,8 +256,17 @@ export const useStore = create<AppState & AppActions>((set) => ({
 
   // Flow B 액션
   setFolderSessions: (sessions) => set({ folderSessions: sessions }),
-  addFolderSession: (session) =>
-    set((s) => ({ folderSessions: [...s.folderSessions, session] })),
+  addFolderSession: (session) => {
+    set((s) => ({ folderSessions: [...s.folderSessions, session] }));
+    // OPFS fire-and-forget
+    saveToOpfs(
+      session.id,
+      session.folderName,
+      session.source ?? "local",
+      String(session.eventTag),
+      session.files,
+    ).catch((e) => console.warn("[store] OPFS save failed:", e));
+  },
   updateFolderSession: (id, patch) =>
     set((s) => ({
       folderSessions: s.folderSessions.map((fs) =>
