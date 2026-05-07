@@ -1,9 +1,16 @@
 
+import { useState, useEffect } from "react";
 import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import Display from "./Display";
-import type { AppState } from "../lib/types";
+import type { AppState, EventTag } from "../lib/types";
+import {
+  listFolderSessions,
+  loadFolderSession,
+  type OpfsSessionMeta,
+} from "../lib/opfsStore";
+import { getRecommendedCount } from "../lib/recommendedCount";
 
 // ─── 2-카드 정의 ─────────────────────────────────────────────────────────────
 const CARDS = [
@@ -26,9 +33,42 @@ const CARDS = [
 
 // ─── Landing ─────────────────────────────────────────────────────────────────
 export default function Landing() {
-  const t       = useT("landing");
-  const setStep = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
-  const setFlow = useStore((s) => s.setFlow);
+  const t                = useT("landing");
+  const setStep          = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
+  const setFlow          = useStore((s) => s.setFlow);
+  const addFolderSession = useStore((s) => s.addFolderSession);
+
+  const [resumeCandidates, setResumeCandidates] = useState<OpfsSessionMeta[]>([]);
+
+  useEffect(() => {
+    listFolderSessions().then((metas) => {
+      const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
+      setResumeCandidates(metas.filter((m) => !inMemoryIds.has(m.sessionId)));
+    }).catch(() => {});
+  }, []);
+
+  async function handleResume(sessionId: string) {
+    const restored = await loadFolderSession(sessionId);
+    if (!restored) return;
+    const tag = restored.meta.eventTag as EventTag;
+    const session = {
+      id: sessionId,
+      folderName: restored.meta.folderName,
+      eventTag: tag,
+      files: restored.files,
+      status: "pending" as const,
+      progress: 0,
+      stage: "",
+      photos: new Map(),
+      groups: [],
+      targetCount: getRecommendedCount(tag),
+      source: restored.meta.source,
+    };
+    addFolderSession(session);
+    setResumeCandidates((prev) => prev.filter((m) => m.sessionId !== sessionId));
+    setFlow("B");
+    setStep("folderUpload");
+  }
 
   const handleSelect = (id: "personal" | "studio") => {
     if (id === "personal") {
@@ -92,6 +132,47 @@ export default function Landing() {
           {t("subheadline")}
         </p>
       </div>
+
+      {/* OPFS 복원 인라인 카드 */}
+      {resumeCandidates.length > 0 && (
+        <div style={{
+          width: "100%", maxWidth: 700, padding: "16px 24px",
+          margin: "32px 20px 0",
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
+        }}>
+          <div style={{
+            fontSize: 11, color: "var(--text-secondary)",
+            fontFamily: "var(--font-mono)", letterSpacing: "var(--tracking-uppercase)",
+            textTransform: "uppercase", marginBottom: 8,
+          }}>
+            미완료 세션 · {resumeCandidates.length}건
+          </div>
+          {resumeCandidates.slice(0, 3).map((m) => (
+            <div key={m.sessionId} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "8px 0", borderTop: "1px solid var(--border-subtle)",
+            }}>
+              <div>
+                <div style={{ color: "var(--text-primary)", fontSize: 14 }}>
+                  {m.folderName}
+                </div>
+                <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
+                  {m.fileNames.length}장 · {(m.totalBytes / 1024 / 1024).toFixed(1)}MB
+                </div>
+              </div>
+              <button
+                className="btn-secondary"
+                style={{ padding: "6px 14px", fontSize: 13 }}
+                onClick={() => handleResume(m.sessionId)}
+              >
+                이어서 하기
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 2-카드 */}
       <div style={{

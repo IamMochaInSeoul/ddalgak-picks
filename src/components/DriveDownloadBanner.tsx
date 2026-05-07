@@ -56,6 +56,17 @@ export default function DriveDownloadBanner() {
           </span>
         )}
       </div>
+      {downloading.length > 0 && (
+        <span style={{
+          fontSize: 11,
+          color: "var(--text-secondary)",
+          fontFamily: "var(--font-mono)",
+          letterSpacing: "var(--tracking-uppercase)",
+          textTransform: "uppercase",
+        }}>
+          다른 화면 보셔도 됩니다 — 진행 계속
+        </span>
+      )}
 
       {/* 진행 바 (다운로드 중인 항목이 있을 때) */}
       {downloading.length > 0 && totalFiles > 0 && (
