@@ -43,7 +43,7 @@ export default function StudioTypeSelect() {
         position: "sticky", top: 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 28px", width: "100%",
-        borderBottom: "1px solid var(--border)",
+        borderBottom: "1px solid var(--border-subtle)",
         background: "rgba(13,15,18,0.92)",
         backdropFilter: "blur(12px)",
         boxSizing: "border-box",
