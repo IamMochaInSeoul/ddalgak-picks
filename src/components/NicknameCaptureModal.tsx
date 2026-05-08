@@ -56,8 +56,8 @@ export default function NicknameCaptureModal({ onClose }: Props) {
       }}>
         {/* 헤더 */}
         <div style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 20, fontWeight: 700,
+          fontFamily: "var(--font-sans)",
+          fontSize: 20, fontWeight: 800,
           letterSpacing: "var(--tracking-display)",
           color: "var(--text-primary)",
           marginBottom: 10,
