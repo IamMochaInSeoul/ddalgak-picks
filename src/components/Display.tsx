@@ -40,12 +40,14 @@ export default function Display({
     <Tag
       className={className}
       style={{
-        fontFamily:     "var(--font-display)",
+        fontFamily:     "var(--font-sans)",       // 산세리프 (Pretendard) 통일
         fontSize,
         lineHeight,
         letterSpacing:  "var(--tracking-display)",
-        fontWeight:     italic ? 300 : 400,
-        fontStyle:      italic ? "italic" : "normal",
+        /* italic prop: 한글 디스플레이는 italic 어색하므로 fontStyle은 normal 유지.
+           가벼운 톤은 fontWeight 800→600으로만 표현. */
+        fontWeight:     italic ? 600 : 800,        // 굵게 통일 (한글 가독성)
+        fontStyle:      "normal",                  // 한글 italic 어색 — 강제 normal
         color,
         margin:         0,
         ...style,
