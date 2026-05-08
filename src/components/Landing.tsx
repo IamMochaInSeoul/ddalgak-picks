@@ -88,8 +88,8 @@ export default function Landing() {
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 28px",
-        borderBottom: "1px solid var(--border)",
-        background: "rgba(13,13,18,0.85)",
+        borderBottom: "1px solid var(--border-subtle)",
+        background: "rgba(14, 13, 11, 0.92)",   // --bg-base #0E0D0B 92% 알파
         backdropFilter: "blur(12px)",
       }}>
         <span style={{ fontSize: 17, fontWeight: 800, color: "var(--accent2)", letterSpacing: "-0.03em" }}>
