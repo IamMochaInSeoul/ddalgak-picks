@@ -66,8 +66,8 @@ export default function GroupCompareModal({ group, photos, onSwap, onClose }: Pr
         }}>
           <div>
             <div style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 17, fontWeight: 700,
+              fontFamily: "var(--font-sans)",
+              fontSize: 17, fontWeight: 800,
               color: "var(--text-primary)",
               marginBottom: 4,
             }}>

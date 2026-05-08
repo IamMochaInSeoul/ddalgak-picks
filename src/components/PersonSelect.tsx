@@ -113,9 +113,9 @@ export default function PersonSelect() {
       {/* ─── 헤더 ─────────────────────────────────────────── */}
       <div style={{ textAlign: "center", maxWidth: 560, marginBottom: 40 }}>
         <h1 style={{
-          fontFamily: "var(--font-display)",
+          fontFamily: "var(--font-sans)",
           fontSize: 26,
-          fontWeight: 700,
+          fontWeight: 800,
           color: "var(--text-primary)",
           marginBottom: 10,
           letterSpacing: "-0.02em",
@@ -281,10 +281,10 @@ export default function PersonSelect() {
                 {name && (
                   <div style={{
                     fontSize: 13,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     color: selected ? "var(--accent)" : "var(--text-primary)",
                     marginBottom: 2,
-                    fontFamily: "var(--font-display)",
+                    fontFamily: "var(--font-sans)",
                   }}>
                     {name}
                   </div>
@@ -463,9 +463,9 @@ export default function PersonSelect() {
             maxWidth: 340,
           }}>
             <div style={{
-              fontFamily: "var(--font-display)",
+              fontFamily: "var(--font-sans)",
               fontSize: 18,
-              fontWeight: 700,
+              fontWeight: 800,
               color: "var(--text-primary)",
               marginBottom: 6,
             }}>
