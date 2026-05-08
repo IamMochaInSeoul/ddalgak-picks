@@ -20,8 +20,8 @@
   /* ── Text ──────────────────────────────────────────────────────────────── */
   /* 따뜻한 오프화이트. 순수 #FFF는 너무 차갑다. */
   --text-primary:   #F2EDE3;   /* 본문 */
-  --text-secondary: #A39B89;   /* 보조 정보·캡션 */
-  --text-tertiary:  #6B6555;   /* 메타데이터·타임스탬프 */
+  --text-secondary: #C5BBA5;   /* 보조 정보·캡션 — luma 190, contrast ~6.0:1 (WCAG AA) */
+  --text-tertiary:  #8E8470;   /* 메타데이터·타임스탬프 — luma 138, contrast ~4.5:1 (WCAG AA) */
   --text-disabled:  #443F35;
 
   /* ── Accent — 잉크 블루 ─────────────────────────────────────────────── */

@@ -20,6 +20,11 @@ import {
   clearSession,
   type PersistedSession,
 } from "../lib/sessionPersist";
+import {
+  clearExpiredSessions,
+  listFolderSessions,
+} from "../lib/opfsStore";
+import { showToast } from "./Toast";
 import UserAddress from "./UserAddress";
 
 /** 3초 디바운스 저장 */
@@ -51,16 +56,33 @@ export default function AppShell() {
     });
   }, []);
 
-  // ── beforeunload: 분석 중 또는 갤러리에서 탭 닫기 경고 ─────────────────
+  // ── beforeunload: 분석 중·갤러리·Drive 다운로드 중 탭 닫기 경고 ─────────
   useEffect(() => {
-    if (step !== "analysis" && step !== "gallery" && step !== "folderGallery") return;
     const handler = (e: BeforeUnloadEvent) => {
+      const downloading = useStore.getState().driveQueue.some((q) => q.status === "downloading");
+      if (step !== "analysis" && step !== "gallery" && step !== "folderGallery" && !downloading) return;
       e.preventDefault();
-      e.returnValue = ""; // 모던 브라우저는 커스텀 메시지 무시 — 브라우저 기본 다이얼로그 표시됨
+      e.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [step]);
+
+  // ── OPFS: 만료 세션 정리 + 미복원 세션 알림 ────────────────────────────
+  useEffect(() => {
+    clearExpiredSessions().catch(() => {});
+    listFolderSessions().then((metas) => {
+      const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
+      const candidates = metas.filter((m) => !inMemoryIds.has(m.sessionId));
+      if (candidates.length > 0) {
+        showToast(
+          `${candidates.length}개의 이전 세션이 있어요. 랜딩에서 이어서 하실 수 있습니다`,
+          "🗂",
+          6000,
+        );
+      }
+    }).catch(() => {});
+  }, []);
 
   // ── 갤러리 상태 자동저장 (3초 디바운스) ────────────────────────────────
   const debouncedSave = useRef(

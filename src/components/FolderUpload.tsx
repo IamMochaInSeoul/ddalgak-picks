@@ -12,6 +12,7 @@
  *   - 같은 폴더 재선택 시 onChange가 발화하지 않는 Chrome 버그 → inputKey로 매번 remount
  */
 import { useCallback, useRef, useState } from "react";
+import { runWithConcurrency } from "../lib/concurrency";
 import { useStore } from "../lib/store";
 import { inferEventTag, EVENT_TAG_LABELS, ALL_EVENT_TAGS } from "../lib/eventTagger";
 import { getRecommendedCount } from "../lib/recommendedCount";
@@ -235,24 +236,29 @@ export default function FolderUpload() {
             }
             updateDriveQueueItem(qid, { total: items.length });
 
-            // §16 HIGH — 썸네일(800px) 우선, Drive 미처리 파일은 원본 폴백
-            const files: File[] = [];
-            const usedItems: typeof items = [];
-            let thumbCount = 0;
+            // §16 HIGH — 썸네일(800px) 우선, Drive 미처리 파일은 원본 폴백 (병렬 8)
             const origSavedBytes = items.reduce((s, it) => s + parseInt(it.size ?? "0", 10), 0);
+            let thumbCount = 0;
 
-            for (let i = 0; i < items.length; i++) {
-              const item = items[i];
-              const thumb = await downloadDriveThumbnail(item, token!);
-              if (thumb) {
-                files.push(thumb);
-                thumbCount++;
-              } else {
-                // Drive 썸네일 미처리(HEIC 등) → 원본 폴백
-                files.push(await downloadDriveOriginal(item, token!));
-              }
-              usedItems.push(item);
-              updateDriveQueueItem(qid, { current: i + 1 });
+            const result = await runWithConcurrency(
+              items,
+              async (item) => {
+                const thumb = await downloadDriveThumbnail(item, token!);
+                if (thumb) { thumbCount++; return { item, file: thumb }; }
+                const original = await downloadDriveOriginal(item, token!);
+                return { item, file: original };
+              },
+              8,
+              (done) => updateDriveQueueItem(qid, { current: done }),
+            );
+
+            // 원래 순서대로 정렬된 ok 배열 사용
+            const files: File[] = result.ok.map((r) => r.value.file);
+            const usedItems = result.ok.map((r) => r.value.item);
+
+            if (result.err.length > 0) {
+              console.warn(`[Drive] ${result.err.length}건 다운로드 실패:`, result.err);
+              showToast(`${result.err.length}건 다운로드 실패. 나머지 ${files.length}장으로 진행합니다`, "⚠️");
             }
 
             const tag = inferEventTag(picked.name);
@@ -294,10 +300,15 @@ export default function FolderUpload() {
 
         (async () => {
           try {
-            const files: File[] = [];
-            for (let i = 0; i < items.length; i++) {
-              files.push(await downloadDriveOriginal(items[i], token!));
-              updateDriveQueueItem(qid, { current: i + 1 });
+            const result = await runWithConcurrency(
+              items,
+              (item) => downloadDriveOriginal(item, token!),
+              8,
+              (done) => updateDriveQueueItem(qid, { current: done }),
+            );
+            const files: File[] = result.ok.map((r) => r.value);
+            if (result.err.length > 0) {
+              showToast(`${result.err.length}건 실패. 나머지 ${files.length}장 진행`, "⚠️");
             }
             addFolderSession(makeSession(
               "Drive 사진", files, "other", getRecommendedCount("other"),
