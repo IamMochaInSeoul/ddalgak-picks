@@ -30,6 +30,7 @@ import PhotoDetailModal from "./PhotoDetailModal";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
 import { saveZip, loadZip, type CachedZip } from "../lib/zipManager";
+import { track } from "../lib/analytics";
 import { showToast } from "./Toast";
 import { applyWatermark } from "../lib/watermark";
 import {
@@ -322,6 +323,8 @@ export default function FolderGallery() {
       return;
     }
 
+    track({ name: "zip_download_attempt", params: { photo_count: selCount } });
+
     // §16 — Drive 원본 받기 훅 (선택 확정 시점)
     await fetchDriveOriginals();
 
@@ -373,6 +376,10 @@ export default function FolderGallery() {
       saveZip(sessionZipId, blob, zipFilenameTs).then(() => {
         loadZip(sessionZipId).then(setCachedZip);
       }).catch(() => {});
+      track({ name: "zip_download_complete", params: {
+        photo_count: folderSessions.reduce((sum, s) => sum + [...s.photos.values()].filter((p) => p.isSelected).length, 0),
+        size_mb: parseFloat((blob.size / 1024 / 1024).toFixed(1)),
+      }});
       setExported(true);
       setZipPercent(0);
 
@@ -844,6 +851,7 @@ export default function FolderGallery() {
                 className="btn-secondary"
                 style={{ fontSize: 12, padding: "8px 14px" }}
                 onClick={() => {
+                  track({ name: "zip_redownload", params: { size_mb: parseFloat((cachedZip.size / 1024 / 1024).toFixed(1)) } });
                   const url = URL.createObjectURL(cachedZip.blob);
                   const a = document.createElement("a");
                   a.href = url; a.download = cachedZip.filename; a.click();

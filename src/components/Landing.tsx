@@ -13,6 +13,7 @@ import {
   type OpfsSessionMeta,
 } from "../lib/opfsStore";
 import { getRecommendedCount } from "../lib/recommendedCount";
+import { track } from "../lib/analytics";
 
 // ─── 2-카드 정의 ─────────────────────────────────────────────────────────────
 const CARDS = [
@@ -47,6 +48,7 @@ export default function Landing() {
       const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
       setResumeCandidates(metas.filter((m) => !inMemoryIds.has(m.sessionId)));
     }).catch(() => {});
+    if (isFreeBeta()) track({ name: "free_beta_view" });
   }, []);
 
   async function handleResume(sessionId: string) {
@@ -73,6 +75,7 @@ export default function Landing() {
   }
 
   const handleSelect = (id: "personal" | "studio") => {
+    track({ name: "flow_select", params: { flow: id } });
     if (id === "personal") {
       setFlow("A");
       setStep("typeSelect");

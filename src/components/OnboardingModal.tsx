@@ -6,6 +6,7 @@
  * - 산세리프 800 (v0.5.2.1 §9-5 정책 — var(--font-sans), fontStyle: "normal")
  */
 import { useState, useEffect } from "react";
+import { track } from "../lib/analytics";
 
 const ONBOARDED_KEY = "ddalgak-onboarded-at";
 
@@ -15,10 +16,12 @@ export default function OnboardingModal() {
   useEffect(() => {
     if (!localStorage.getItem(ONBOARDED_KEY)) {
       setOpen(true);
+      track({ name: "onboarding_shown" });
     }
   }, []);
 
   const dismiss = (permanent: boolean) => {
+    track({ name: "onboarding_dismiss", params: { permanent } });
     if (permanent) localStorage.setItem(ONBOARDED_KEY, String(Date.now()));
     setOpen(false);
   };

@@ -23,6 +23,7 @@ import {
 } from "../lib/sessionPersist";
 import { isFreeBeta } from "../lib/freeBetaConfig";
 import { clearExpiredZips } from "../lib/zipManager";
+import { track } from "../lib/analytics";
 import {
   clearExpiredSessions,
   listFolderSessions,
@@ -51,8 +52,9 @@ export default function AppShell() {
   const [recoveryData, setRecoveryData] = useState<PersistedSession | null>(null);
   const [recoveryChecked, setRecoveryChecked] = useState(false);
 
-  // ── 앱 마운트 시 복구 데이터 확인 ──────────────────────────────────────
+  // ── 앱 마운트 시 복구 데이터 확인 + app_open 이벤트 ──────────────────────
   useEffect(() => {
+    track({ name: "app_open", params: { free_beta: isFreeBeta() } });
     loadSession().then((data) => {
       setRecoveryData(data);
       setRecoveryChecked(true);
@@ -137,6 +139,7 @@ export default function AppShell() {
   // ── 복구 배너 핸들러 ───────────────────────────────────────────────────
   function handleRestore() {
     if (!recoveryData) return;
+    track({ name: "session_restored" });
     restoreSession(recoveryData);
     setRecoveryData(null);
   }
