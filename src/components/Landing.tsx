@@ -5,12 +5,15 @@ import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import Display from "./Display";
 import type { AppState, EventTag } from "../lib/types";
+import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
+import ReturningBanner from "./ReturningBanner";
 import {
   listFolderSessions,
   loadFolderSession,
   type OpfsSessionMeta,
 } from "../lib/opfsStore";
 import { getRecommendedCount } from "../lib/recommendedCount";
+import { track } from "../lib/analytics";
 
 // ─── 2-카드 정의 ─────────────────────────────────────────────────────────────
 const CARDS = [
@@ -45,6 +48,7 @@ export default function Landing() {
       const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
       setResumeCandidates(metas.filter((m) => !inMemoryIds.has(m.sessionId)));
     }).catch(() => {});
+    if (isFreeBeta()) track({ name: "free_beta_view" });
   }, []);
 
   async function handleResume(sessionId: string) {
@@ -71,6 +75,7 @@ export default function Landing() {
   }
 
   const handleSelect = (id: "personal" | "studio") => {
+    track({ name: "flow_select", params: { flow: id } });
     if (id === "personal") {
       setFlow("A");
       setStep("typeSelect");
@@ -114,7 +119,7 @@ export default function Landing() {
           letterSpacing: "var(--tracking-uppercase)",
           textTransform: "uppercase",
         }}>
-          BETA
+          {isFreeBeta() ? FREE_BETA_COPY.badge : "BETA"}
         </div>
 
         <Display
@@ -132,6 +137,9 @@ export default function Landing() {
           {t("subheadline")}
         </p>
       </div>
+
+      {/* 재방문 배너 (닉네임 있을 때만 노출) */}
+      <ReturningBanner />
 
       {/* OPFS 복원 인라인 카드 */}
       {resumeCandidates.length > 0 && (

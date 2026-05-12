@@ -13,6 +13,7 @@ import StudioTypeSelect from "./StudioTypeSelect";
 import PersonSelect from "./PersonSelect";
 import ErrorBoundary from "./ErrorBoundary";
 import { ToastContainer } from "./Toast";
+import OnboardingModal from "./OnboardingModal";
 import DriveDownloadBanner from "./DriveDownloadBanner";
 import {
   saveSession,
@@ -20,6 +21,9 @@ import {
   clearSession,
   type PersistedSession,
 } from "../lib/sessionPersist";
+import { isFreeBeta } from "../lib/freeBetaConfig";
+import { clearExpiredZips } from "../lib/zipManager";
+import { track } from "../lib/analytics";
 import {
   clearExpiredSessions,
   listFolderSessions,
@@ -48,8 +52,9 @@ export default function AppShell() {
   const [recoveryData, setRecoveryData] = useState<PersistedSession | null>(null);
   const [recoveryChecked, setRecoveryChecked] = useState(false);
 
-  // ── 앱 마운트 시 복구 데이터 확인 ──────────────────────────────────────
+  // ── 앱 마운트 시 복구 데이터 확인 + app_open 이벤트 ──────────────────────
   useEffect(() => {
+    track({ name: "app_open", params: { free_beta: isFreeBeta() } });
     loadSession().then((data) => {
       setRecoveryData(data);
       setRecoveryChecked(true);
@@ -68,9 +73,10 @@ export default function AppShell() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [step]);
 
-  // ── OPFS: 만료 세션 정리 + 미복원 세션 알림 ────────────────────────────
+  // ── OPFS: 만료 세션 정리 + ZIP 캐시 만료 정리 + 미복원 세션 알림 ──────────
   useEffect(() => {
     clearExpiredSessions().catch(() => {});
+    clearExpiredZips().catch(() => {});
     listFolderSessions().then((metas) => {
       const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
       const candidates = metas.filter((m) => !inMemoryIds.has(m.sessionId));
@@ -133,6 +139,7 @@ export default function AppShell() {
   // ── 복구 배너 핸들러 ───────────────────────────────────────────────────
   function handleRestore() {
     if (!recoveryData) return;
+    track({ name: "session_restored" });
     restoreSession(recoveryData);
     setRecoveryData(null);
   }
@@ -142,7 +149,7 @@ export default function AppShell() {
     setRecoveryData(null);
   }
 
-  const betaH = import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0;
+  const betaH = isFreeBeta() ? 28 : 0;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingTop: betaH }}>
@@ -189,8 +196,8 @@ export default function AppShell() {
         </div>
       )}
 
-      {/* 무료 베타 배너 — VITE_FEATURE_PAYMENT 꺼져있을 때만 표시 */}
-      {import.meta.env.VITE_FEATURE_PAYMENT !== "true" && (
+      {/* 무료 베타 배너 — 무료 베타 모드일 때만 표시 */}
+      {isFreeBeta() && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
           background: "linear-gradient(90deg, #16a34a, #15803d)",
@@ -203,6 +210,7 @@ export default function AppShell() {
       )}
 
       <ToastContainer />
+      <OnboardingModal />
       <DriveDownloadBanner />
       <ErrorBoundary>
         {step === "landing"    && <Landing />}

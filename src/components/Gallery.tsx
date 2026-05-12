@@ -17,6 +17,9 @@ import { showToast } from "./Toast";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
+import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
+import { saveZip, loadZip, type CachedZip } from "../lib/zipManager";
+import { track } from "../lib/analytics";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
@@ -83,6 +86,9 @@ export default function Gallery() {
   const [exporting, setExporting] = useState(false);
   const [zipPercent, setZipPercent] = useState(0);
   const [exported, setExported] = useState(false);
+  const [cachedZip, setCachedZip] = useState<CachedZip | null>(null);
+  // 세션 ID — 이 갤러리 세션의 고유 키 (마운트 시 1회 생성)
+  const sessionZipId = useRef(`gallery-${Date.now()}`).current;
   const [copied, setCopied] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(() => shouldShowNicknameModal());
@@ -166,7 +172,10 @@ export default function Gallery() {
     e.target.value = "";
   }, [reattachFiles, setFilesDetached]);
 
-  const handlePhotoClick = useCallback((photoId: string) => setModalPhotoId(photoId), []);
+  const handlePhotoClick = useCallback((photoId: string) => {
+    track({ name: "photo_modal_open" });
+    setModalPhotoId(photoId);
+  }, []);
 
   // 같은 그룹의 베스트 사진 반환 (그룹 베스트 점프용)
   const getGroupBest = useCallback((photoId: string): PhotoEntry | undefined => {
@@ -186,6 +195,7 @@ export default function Gallery() {
     if (!canReextract || reextracting) return;
     const files = (window as unknown as Record<string, unknown>).__ddalgak_files as File[] | undefined;
     if (!files || !photoType) return;
+    track({ name: "reextract_start", params: { attempt: reextractCount + 1 } });
     setReextracting(true);
     setReextractDoneCount(null);
     incrementReextract();
@@ -212,6 +222,7 @@ export default function Gallery() {
       setShowPaymentGate(true);
       return;
     }
+    track({ name: "zip_download_attempt", params: { photo_count: selectedPhotos.length } });
     setExporting(true);
     try {
       // 결제 비활성(무료 베타) 또는 유료 사용자는 전량 내보내기
@@ -232,10 +243,19 @@ export default function Gallery() {
       const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
         setZipPercent(Math.round(meta.percent));
       });
+      const zipFilenameTs = `ddalgak-picks-${Date.now()}.zip`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
+      a.href = url; a.download = zipFilenameTs; a.click();
       URL.revokeObjectURL(url);
+      // 24h 재다운로드 캐시 저장 (fire-and-forget)
+      saveZip(sessionZipId, blob, zipFilenameTs).then(() => {
+        loadZip(sessionZipId).then(setCachedZip);
+      }).catch(() => {});
+      track({ name: "zip_download_complete", params: {
+        photo_count: photosToExport.length,
+        size_mb: parseFloat((blob.size / 1024 / 1024).toFixed(1)),
+      }});
       setExported(true);
       setZipPercent(0);
       const { nickname, honorific } = loadProfile();
@@ -290,7 +310,7 @@ export default function Gallery() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
       {/* Sticky header */}
-      <div style={{ position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100, background: "var(--bg)",
+      <div style={{ position: "sticky", top: isFreeBeta() ? 28 : 0, zIndex: 100, background: "var(--bg)",
         borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
@@ -494,7 +514,7 @@ export default function Gallery() {
                   />
                   {/* 우상단 빼기 버튼 — stopPropagation으로 모달 방지 */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); togglePhotoSelected(photo.id); }}
+                    onClick={(e) => { e.stopPropagation(); track({ name: "photo_toggle", params: { action: "deselect" } }); togglePhotoSelected(photo.id); }}
                     aria-label="선택에서 빼기"
                     style={{
                       position: "absolute", top: 8, right: 8, zIndex: 2,
@@ -563,7 +583,7 @@ export default function Gallery() {
                               />
                               {/* Quick-add button */}
                               <button
-                                onClick={() => togglePhotoSelected(photo.id)}
+                                onClick={() => { track({ name: "photo_toggle", params: { action: "select" } }); togglePhotoSelected(photo.id); }}
                                 style={{
                                   position: "absolute", top: 6, left: 6,
                                   background: "rgba(45,67,86,0.9)", color: "white",
@@ -663,8 +683,33 @@ export default function Gallery() {
           {exported && <span style={{ marginLeft: 12, color: "var(--high)", fontSize: 13 }}>
             ✓ {tExport("done")} ({tExport("savedAs", { count: selectedPhotos.length })})
           </span>}
+          {isFreeBeta() && (
+            <span style={{
+              marginLeft: exported ? 12 : 0, marginTop: 2,
+              fontSize: 11, color: "var(--text-tertiary)",
+              fontFamily: "var(--font-sans)", fontStyle: "normal",
+              display: "block",
+            }}>
+              {FREE_BETA_COPY.helperLine}
+            </span>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {cachedZip && (
+            <button
+              className="btn-secondary"
+              style={{ fontSize: 12, padding: "8px 14px" }}
+              onClick={() => {
+                track({ name: "zip_redownload", params: { size_mb: parseFloat((cachedZip.size / 1024 / 1024).toFixed(1)) } });
+                const url = URL.createObjectURL(cachedZip.blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = cachedZip.filename; a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              방금 만든 ZIP 다시 받기 — {(cachedZip.size / 1024 / 1024).toFixed(1)}MB
+            </button>
+          )}
           <button className="btn-secondary" style={{ fontSize: 13, padding: "8px 16px" }} onClick={handleCopyFileList}>
             {copied ? tExport("copied") : tExport("fileList")}
           </button>
@@ -672,7 +717,9 @@ export default function Gallery() {
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
             {exporting
               ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : tExport("downloading"))
-              : `ZIP 다운로드 (${selectedPhotos.length}장)`}
+              : isFreeBeta()
+                ? FREE_BETA_COPY.downloadButton
+                : `ZIP 다운로드 (${selectedPhotos.length}장)`}
           </button>
         </div>
       </div>
