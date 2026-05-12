@@ -6,6 +6,7 @@ import LangToggle from "./LangToggle";
 import Display from "./Display";
 import type { AppState, EventTag } from "../lib/types";
 import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
+import ReturningBanner from "./ReturningBanner";
 import {
   listFolderSessions,
   loadFolderSession,
@@ -133,6 +134,9 @@ export default function Landing() {
           {t("subheadline")}
         </p>
       </div>
+
+      {/* 재방문 배너 (닉네임 있을 때만 노출) */}
+      <ReturningBanner />
 
       {/* OPFS 복원 인라인 카드 */}
       {resumeCandidates.length > 0 && (
