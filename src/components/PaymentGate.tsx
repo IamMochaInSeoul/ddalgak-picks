@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../lib/store";
 import { requestPayment, verifyPayment, PRODUCTS, type ProductCode } from "../lib/payment";
 import { showToast } from "./Toast";
+import { isFreeBeta } from "../lib/freeBetaConfig";
 
 interface Props {
   onClose: () => void;
@@ -18,6 +19,15 @@ export default function PaymentGate({ onClose, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const featureOn = import.meta.env.VITE_FEATURE_PAYMENT === "true";
+
+  // 무료 베타: 모달 마운트 즉시 결제 완료로 처리
+  useEffect(() => {
+    if (isFreeBeta()) {
+      setPayment({ isPaid: true, paymentSessionId: "free-beta", receiptEmail: "" });
+      setWatermarkEnabled(false);
+      onSuccess();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handlePay() {
     if (!email.includes("@")) { setError("올바른 이메일을 입력해주세요."); return; }

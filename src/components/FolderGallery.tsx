@@ -28,6 +28,7 @@ import UserAddress from "./UserAddress";
 import GroupCompareModal from "./GroupCompareModal";
 import PhotoDetailModal from "./PhotoDetailModal";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
+import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
 import { showToast } from "./Toast";
 import { applyWatermark } from "../lib/watermark";
 import {
@@ -459,7 +460,7 @@ export default function FolderGallery() {
 
       {/* ── 헤더 ── */}
       <div style={{
-        position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100,
+        position: "sticky", top: isFreeBeta() ? 28 : 0, zIndex: 100,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "14px 24px",
         borderBottom: "1px solid var(--border)",
@@ -482,7 +483,7 @@ export default function FolderGallery() {
                 ? `원본 받는 중... ${origFetchProgress.current}/${origFetchProgress.total}`
                 : exporting
                   ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…")
-                  : exported ? "✓ 완료." : `ZIP 저장 (${totalSelected}장)`}
+                  : exported ? "✓ 완료." : isFreeBeta() ? FREE_BETA_COPY.downloadButton : `ZIP 저장 (${totalSelected}장)`}
             </button>
           )}
           <LangToggle />
@@ -819,6 +820,15 @@ export default function FolderGallery() {
             {folderSessions.filter((s) => s.status === "done").length}개 폴더 완료
             {" · "}
             <strong style={{ color: "var(--accent2)" }}>총 {totalSelected}장</strong> 선별
+            {isFreeBeta() && (
+              <div style={{
+                marginTop: 2, fontSize: 11,
+                color: "var(--text-tertiary)",
+                fontFamily: "var(--font-sans)", fontStyle: "normal",
+              }}>
+                {FREE_BETA_COPY.helperLine}
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
             <button
@@ -831,7 +841,7 @@ export default function FolderGallery() {
                 ? `원본 받는 중... ${origFetchProgress.current}/${origFetchProgress.total}`
                 : exporting
                   ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : "ZIP 생성 중…")
-                  : exported ? "✓ 완료." : "ZIP 저장"}
+                  : exported ? "✓ 완료." : isFreeBeta() ? FREE_BETA_COPY.downloadButton : "ZIP 저장"}
             </button>
             {flow === "B" && (
               <button

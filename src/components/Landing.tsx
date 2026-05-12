@@ -5,6 +5,7 @@ import { useStore } from "../lib/store";
 import LangToggle from "./LangToggle";
 import Display from "./Display";
 import type { AppState, EventTag } from "../lib/types";
+import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
 import {
   listFolderSessions,
   loadFolderSession,
@@ -114,7 +115,7 @@ export default function Landing() {
           letterSpacing: "var(--tracking-uppercase)",
           textTransform: "uppercase",
         }}>
-          BETA
+          {isFreeBeta() ? FREE_BETA_COPY.badge : "BETA"}
         </div>
 
         <Display

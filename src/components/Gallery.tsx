@@ -17,6 +17,7 @@ import { showToast } from "./Toast";
 import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
+import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
@@ -290,7 +291,7 @@ export default function Gallery() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
       {/* Sticky header */}
-      <div style={{ position: "sticky", top: import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0, zIndex: 100, background: "var(--bg)",
+      <div style={{ position: "sticky", top: isFreeBeta() ? 28 : 0, zIndex: 100, background: "var(--bg)",
         borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
@@ -663,6 +664,16 @@ export default function Gallery() {
           {exported && <span style={{ marginLeft: 12, color: "var(--high)", fontSize: 13 }}>
             ✓ {tExport("done")} ({tExport("savedAs", { count: selectedPhotos.length })})
           </span>}
+          {isFreeBeta() && (
+            <span style={{
+              marginLeft: exported ? 12 : 0, marginTop: 2,
+              fontSize: 11, color: "var(--text-tertiary)",
+              fontFamily: "var(--font-sans)", fontStyle: "normal",
+              display: "block",
+            }}>
+              {FREE_BETA_COPY.helperLine}
+            </span>
+          )}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn-secondary" style={{ fontSize: 13, padding: "8px 16px" }} onClick={handleCopyFileList}>
@@ -672,7 +683,9 @@ export default function Gallery() {
             disabled={selectedPhotos.length === 0 || exporting} onClick={handleExport}>
             {exporting
               ? (zipPercent > 0 ? `ZIP 만드는 중... ${zipPercent}%` : tExport("downloading"))
-              : `ZIP 다운로드 (${selectedPhotos.length}장)`}
+              : isFreeBeta()
+                ? FREE_BETA_COPY.downloadButton
+                : `ZIP 다운로드 (${selectedPhotos.length}장)`}
           </button>
         </div>
       </div>

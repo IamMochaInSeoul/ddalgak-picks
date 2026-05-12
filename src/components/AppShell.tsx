@@ -20,6 +20,7 @@ import {
   clearSession,
   type PersistedSession,
 } from "../lib/sessionPersist";
+import { isFreeBeta } from "../lib/freeBetaConfig";
 import {
   clearExpiredSessions,
   listFolderSessions,
@@ -142,7 +143,7 @@ export default function AppShell() {
     setRecoveryData(null);
   }
 
-  const betaH = import.meta.env.VITE_FEATURE_PAYMENT !== "true" ? 28 : 0;
+  const betaH = isFreeBeta() ? 28 : 0;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingTop: betaH }}>
@@ -189,8 +190,8 @@ export default function AppShell() {
         </div>
       )}
 
-      {/* 무료 베타 배너 — VITE_FEATURE_PAYMENT 꺼져있을 때만 표시 */}
-      {import.meta.env.VITE_FEATURE_PAYMENT !== "true" && (
+      {/* 무료 베타 배너 — 무료 베타 모드일 때만 표시 */}
+      {isFreeBeta() && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
           background: "linear-gradient(90deg, #16a34a, #15803d)",
