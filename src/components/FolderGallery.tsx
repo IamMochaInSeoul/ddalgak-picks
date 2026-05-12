@@ -26,6 +26,7 @@ import MonoNumber from "./MonoNumber";
 import NicknameCaptureModal from "./NicknameCaptureModal";
 import UserAddress from "./UserAddress";
 import GroupCompareModal from "./GroupCompareModal";
+import PhotoDetailModal from "./PhotoDetailModal";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { showToast } from "./Toast";
 import { applyWatermark } from "../lib/watermark";
@@ -92,6 +93,7 @@ export default function FolderGallery() {
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
+  const [modalPhotoId, setModalPhotoId]     = useState<string | null>(null);
 
   // 중복 정보: folderSessionId → Map<photoId, DupeMatch>
   const [dupeMap, setDupeMap] = useState<Map<string, Map<string, DupeMatch>>>(new Map());
@@ -390,6 +392,22 @@ export default function FolderGallery() {
   // ── 현재 탭 세션 ──────────────────────────────────────────────────────────
   const activeSession = folderSessions[activeTab] as FolderSession | undefined;
 
+  // 모달 사진 (Map에서 직접 조회)
+  const modalPhoto: PhotoEntry | null =
+    modalPhotoId && activeSession
+      ? (activeSession.photos.get(modalPhotoId) ?? null)
+      : null;
+
+  // 같은 세션 내 그룹 베스트 (Map API 사용)
+  const getGroupBestInSession = useCallback((photoId: string): PhotoEntry | undefined => {
+    if (!activeSession) return undefined;
+    const photo = activeSession.photos.get(photoId);
+    if (!photo) return undefined;
+    const grp = activeSession.groups.find((g) => g.id === photo.groupId);
+    if (!grp || !grp.selectedId || grp.selectedId === photoId) return undefined;
+    return activeSession.photos.get(grp.selectedId);
+  }, [activeSession]);
+
   // 갤러리 뷰에 따른 사진 목록
   const allSessionPhotos = activeSession
     ? [...activeSession.photos.values()]
@@ -651,7 +669,7 @@ export default function FolderGallery() {
                   return (
                     <div
                       key={photo.id}
-                      onClick={() => togglePhoto(activeSession, photo)}
+                      onClick={() => setModalPhotoId(photo.id)}
                       style={{
                         position: "relative",
                         borderRadius: 8,
@@ -751,6 +769,27 @@ export default function FolderGallery() {
                           {photoGroup.photoIds.length}컷
                         </div>
                       )}
+
+                      {/* 우하단 ±  버튼 — 즉시 토글 (stopPropagation으로 모달 방지) */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); togglePhoto(activeSession, photo); }}
+                        aria-label={isSelected ? "선택에서 빼기" : "선택에 다시 넣기"}
+                        style={{
+                          position: "absolute", bottom: 6, right: 6, zIndex: 2,
+                          width: 24, height: 24,
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--border-subtle)",
+                          background: "rgba(13, 15, 18, 0.72)",
+                          color: isSelected ? "var(--text-secondary)" : "var(--accent)",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 14,
+                          cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          touchAction: "manipulation",
+                        }}
+                      >
+                        {isSelected ? "−" : "+"}
+                      </button>
                     </div>
                   );
                 })}
@@ -832,6 +871,25 @@ export default function FolderGallery() {
           />
         ) : null;
       })()}
+
+      {/* 사진 상세 모달 — Flow B/C 메인 누락 해소 (PHASE1_PLAN ⑥) */}
+      {modalPhoto && activeSession && (
+        <PhotoDetailModal
+          photo={modalPhoto}
+          allPhotos={[...activeSession.photos.values()]}
+          groupBestPhoto={getGroupBestInSession(modalPhoto.id)}
+          onClose={() => setModalPhotoId(null)}
+          onNavigate={(id) => setModalPhotoId(id)}
+          onToggleSelect={(id) => {
+            const p = activeSession.photos.get(id);
+            if (p) togglePhoto(activeSession, p);
+          }}
+          onJumpToGroupBest={() => {
+            const best = getGroupBestInSession(modalPhoto.id);
+            if (best) setModalPhotoId(best.id);
+          }}
+        />
+      )}
     </div>
   );
 }

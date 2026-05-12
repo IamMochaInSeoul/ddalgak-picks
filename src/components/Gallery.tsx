@@ -5,6 +5,7 @@ import { analyzePhotos } from "../lib/analyzer";
 import type { PhotoEntry, PhotoGroup } from "../lib/types";
 import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
+import PhotoDetailModal from "./PhotoDetailModal";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import NicknameCaptureModal from "./NicknameCaptureModal";
@@ -166,6 +167,16 @@ export default function Gallery() {
   }, [reattachFiles, setFilesDetached]);
 
   const handlePhotoClick = useCallback((photoId: string) => setModalPhotoId(photoId), []);
+
+  // 같은 그룹의 베스트 사진 반환 (그룹 베스트 점프용)
+  const getGroupBest = useCallback((photoId: string): PhotoEntry | undefined => {
+    const photo = photos.get(photoId);
+    if (!photo) return undefined;
+    const grp = groups.find((g) => g.id === photo.groupId);
+    if (!grp || !grp.selectedId || grp.selectedId === photoId) return undefined;
+    return photos.get(grp.selectedId);
+  }, [photos, groups]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent, photoId: string) => {
     e.preventDefault();
     setCtxMenu({ x: e.clientX, y: e.clientY, photoId });
@@ -476,10 +487,30 @@ export default function Gallery() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
               {selectedPhotos.map((photo) => (
-                <PhotoCard key={photo.id} photo={photo}
-                  onDoubleClick={handlePhotoClick}
-                  onContextMenu={handleContextMenu}
-                />
+                <div key={photo.id} style={{ position: "relative" }}>
+                  <PhotoCard photo={photo}
+                    onDoubleClick={handlePhotoClick}
+                    onContextMenu={handleContextMenu}
+                  />
+                  {/* 우상단 빼기 버튼 — stopPropagation으로 모달 방지 */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); togglePhotoSelected(photo.id); }}
+                    aria-label="선택에서 빼기"
+                    style={{
+                      position: "absolute", top: 8, right: 8, zIndex: 2,
+                      width: 26, height: 26,
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border-subtle)",
+                      background: "rgba(13, 15, 18, 0.72)",
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 15,
+                      cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      touchAction: "manipulation",
+                    }}
+                  >−</button>
+                </div>
               ))}
             </div>
           )
@@ -672,14 +703,19 @@ export default function Gallery() {
         ) : null;
       })()}
 
-      {/* Photo modal */}
+      {/* Photo detail modal */}
       {modalPhoto && (
-        <PhotoModal
+        <PhotoDetailModal
           photo={modalPhoto}
           allPhotos={displayedPhotos}
+          groupBestPhoto={getGroupBest(modalPhoto.id)}
           onClose={() => setModalPhotoId(null)}
           onNavigate={(id) => setModalPhotoId(id)}
           onToggleSelect={(id) => togglePhotoSelected(id)}
+          onJumpToGroupBest={() => {
+            const best = getGroupBest(modalPhoto.id);
+            if (best) setModalPhotoId(best.id);
+          }}
         />
       )}
 
