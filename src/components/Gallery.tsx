@@ -18,6 +18,7 @@ import { sampleFeedbackPhotos } from "../lib/feedbackLearning";
 import { clearSession } from "../lib/sessionPersist";
 import { shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
+import { saveZip, loadZip, type CachedZip } from "../lib/zipManager";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
@@ -84,6 +85,9 @@ export default function Gallery() {
   const [exporting, setExporting] = useState(false);
   const [zipPercent, setZipPercent] = useState(0);
   const [exported, setExported] = useState(false);
+  const [cachedZip, setCachedZip] = useState<CachedZip | null>(null);
+  // 세션 ID — 이 갤러리 세션의 고유 키 (마운트 시 1회 생성)
+  const sessionZipId = useRef(`gallery-${Date.now()}`).current;
   const [copied, setCopied] = useState(false);
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(() => shouldShowNicknameModal());
@@ -233,10 +237,15 @@ export default function Gallery() {
       const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
         setZipPercent(Math.round(meta.percent));
       });
+      const zipFilenameTs = `ddalgak-picks-${Date.now()}.zip`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `ddalgak-picks-${Date.now()}.zip`; a.click();
+      a.href = url; a.download = zipFilenameTs; a.click();
       URL.revokeObjectURL(url);
+      // 24h 재다운로드 캐시 저장 (fire-and-forget)
+      saveZip(sessionZipId, blob, zipFilenameTs).then(() => {
+        loadZip(sessionZipId).then(setCachedZip);
+      }).catch(() => {});
       setExported(true);
       setZipPercent(0);
       const { nickname, honorific } = loadProfile();
@@ -675,7 +684,21 @@ export default function Gallery() {
             </span>
           )}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {cachedZip && (
+            <button
+              className="btn-secondary"
+              style={{ fontSize: 12, padding: "8px 14px" }}
+              onClick={() => {
+                const url = URL.createObjectURL(cachedZip.blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = cachedZip.filename; a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              방금 만든 ZIP 다시 받기 — {(cachedZip.size / 1024 / 1024).toFixed(1)}MB
+            </button>
+          )}
           <button className="btn-secondary" style={{ fontSize: 13, padding: "8px 16px" }} onClick={handleCopyFileList}>
             {copied ? tExport("copied") : tExport("fileList")}
           </button>

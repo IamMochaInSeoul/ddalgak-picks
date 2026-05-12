@@ -22,6 +22,7 @@ import {
   type PersistedSession,
 } from "../lib/sessionPersist";
 import { isFreeBeta } from "../lib/freeBetaConfig";
+import { clearExpiredZips } from "../lib/zipManager";
 import {
   clearExpiredSessions,
   listFolderSessions,
@@ -70,9 +71,10 @@ export default function AppShell() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [step]);
 
-  // ── OPFS: 만료 세션 정리 + 미복원 세션 알림 ────────────────────────────
+  // ── OPFS: 만료 세션 정리 + ZIP 캐시 만료 정리 + 미복원 세션 알림 ──────────
   useEffect(() => {
     clearExpiredSessions().catch(() => {});
+    clearExpiredZips().catch(() => {});
     listFolderSessions().then((metas) => {
       const inMemoryIds = new Set(useStore.getState().folderSessions.map((s) => s.id));
       const candidates = metas.filter((m) => !inMemoryIds.has(m.sessionId));
