@@ -320,7 +320,7 @@ export default function PhotoModal({ photo, allPhotos, onClose, onNavigate, onTo
             style={{
               width: "100%", padding: "12px", borderRadius: "var(--radius-md)", cursor: "pointer",
               border: `2px solid ${photo.isSelected ? "#ef4444" : "var(--accent)"}`,
-              background: photo.isSelected ? "rgba(239,68,68,0.15)" : "rgba(45,67,86,0.15)",
+              background: photo.isSelected ? "rgba(239,68,68,0.15)" : "rgba(10, 10, 11,0.15)",
               color: photo.isSelected ? "#ef4444" : "var(--accent2)",
               fontWeight: 700, fontSize: 14, transition: "all 0.15s",
             }}

@@ -110,17 +110,17 @@ export default function GroupCompareModal({ group, photos, onSwap, onClose }: Pr
                     ? "2px solid var(--accent)"
                     : "2px solid var(--border)",
                   overflow: "hidden",
-                  background: "var(--bg2)",
-                  transition: "border-color 0.15s, transform 0.15s",
+                  background: "var(--bg-elevated)",
+                  transition: "border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard)",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.transform = "scale(1.03)";
                   (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent)";
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-sm)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.transform = "";
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = "";
                   (e.currentTarget as HTMLDivElement).style.borderColor =
-                    isBest ? "var(--accent)" : "var(--border)";
+                    isBest ? "var(--accent)" : "var(--border-subtle)";
                 }}
               >
                 {/* Thumbnail */}

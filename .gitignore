@@ -34,3 +34,8 @@ AGENTS.md
 CLAUDE.md
 CODEX_FOLLOWUP_PLAN.md
 DEPLOY.md
+
+# v0.5.5 정리 — 빌드 임시·도구 디렉터리
+vite.config.ts.timestamp-*.mjs
+.claude/
+supabase/.temp/

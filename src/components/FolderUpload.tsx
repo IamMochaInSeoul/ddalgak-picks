@@ -379,7 +379,7 @@ export default function FolderUpload() {
             border: `2px dashed ${dragging ? "var(--accent)" : "var(--border)"}`,
             borderRadius: "var(--radius-lg)", padding: "40px 24px", textAlign: "center",
             cursor: loading ? "wait" : "pointer",
-            background: dragging ? "rgba(45,67,86,0.08)" : "var(--bg2)",
+            background: dragging ? "rgba(10, 10, 11,0.08)" : "var(--bg2)",
             transition: "all 0.15s", marginBottom: 12,
           }}
         >
@@ -459,7 +459,7 @@ export default function FolderUpload() {
                   ? "rgba(255,80,80,0.10)"
                   : item.status === "done"
                     ? "rgba(0,200,100,0.10)"
-                    : "rgba(45,67,86,0.08)",
+                    : "rgba(10, 10, 11,0.08)",
                 border: `1px solid ${
                   item.status === "error" ? "rgba(255,80,80,0.3)"
                   : item.status === "done" ? "rgba(0,200,100,0.3)"
@@ -518,7 +518,7 @@ export default function FolderUpload() {
                 style={{
                   padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                   border: `2px solid ${maxPerGroup === v ? "var(--accent)" : "var(--border)"}`,
-                  background: maxPerGroup === v ? "rgba(45,67,86,0.15)" : "transparent",
+                  background: maxPerGroup === v ? "rgba(10, 10, 11,0.15)" : "transparent",
                   color: maxPerGroup === v ? "var(--accent2)" : "var(--text2)",
                 }}>
                 {v >= 9999 ? "무제한" : `${v}장`}
@@ -567,7 +567,7 @@ export default function FolderUpload() {
                           style={{
                             padding: "5px 10px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                             border: `1.5px solid ${session.eventTag === tag ? "var(--accent)" : "var(--border)"}`,
-                            background: session.eventTag === tag ? "rgba(45,67,86,0.15)" : "transparent",
+                            background: session.eventTag === tag ? "rgba(10, 10, 11,0.15)" : "transparent",
                             color: session.eventTag === tag ? "var(--accent2)" : "var(--text2)",
                           }}>
                           {EVENT_TAG_LABELS[tag]}
@@ -582,7 +582,7 @@ export default function FolderUpload() {
                       style={{
                         padding: "4px 12px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                         border: "1.5px solid var(--accent)",
-                        background: "rgba(45,67,86,0.12)",
+                        background: "rgba(10, 10, 11,0.12)",
                         color: "var(--accent2)",
                       }}
                     >
@@ -603,7 +603,7 @@ export default function FolderUpload() {
                           style={{
                             padding: "4px 8px", borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                             border: `1.5px solid ${session.targetCount === n ? "var(--accent)" : "var(--border)"}`,
-                            background: session.targetCount === n ? "rgba(45,67,86,0.15)" : "transparent",
+                            background: session.targetCount === n ? "rgba(10, 10, 11,0.15)" : "transparent",
                             color: session.targetCount === n ? "var(--accent2)" : "var(--text2)",
                           }}>
                           {n}{n === getRecommendedCount(session.eventTag) ? " (추천)" : ""}

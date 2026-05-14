@@ -6,6 +6,7 @@ import type { PhotoEntry, PhotoGroup } from "../lib/types";
 import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
 import PhotoDetailModal from "./PhotoDetailModal";
+import GalleryThemeToggle, { useGalleryTheme } from "./GalleryThemeToggle";
 import LangToggle from "./LangToggle";
 import PaymentGate from "./PaymentGate";
 import NicknameCaptureModal from "./NicknameCaptureModal";
@@ -23,11 +24,11 @@ import { track } from "../lib/analytics";
 
 // 제외 사유 그룹 정의
 const EXCLUSION_GROUPS: { key: string; label: string; emoji: string; codes: string[] }[] = [
-  { key: "eye",    label: "눈 감음",        emoji: "😑", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
-  { key: "blur",   label: "흔들림·초점",    emoji: "💫", codes: ["BLUR", "BLUR_NOISE"] },
-  { key: "side",   label: "측면 얼굴",      emoji: "↩️", codes: ["SIDE_FACE"] },
-  { key: "noface", label: "인물 감지 불가", emoji: "🔍", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
-  { key: "other",  label: "기타 제외",      emoji: "📋", codes: [] },   // catch-all
+  { key: "eye",    label: "눈 감음",        emoji: "", codes: ["EYE_CLOSED", "EYE_REGION_DARK"] },
+  { key: "blur",   label: "흔들림·초점",    emoji: "", codes: ["BLUR", "BLUR_NOISE"] },
+  { key: "side",   label: "측면 얼굴",      emoji: "", codes: ["SIDE_FACE"] },
+  { key: "noface", label: "인물 감지 불가", emoji: "", codes: ["NO_SUBJECT", "LOW_CONFIDENCE"] },
+  { key: "other",  label: "기타 제외",      emoji: "", codes: [] },   // catch-all
   // Info-only codes (not shown in exclusion tabs)
   // EYE_SQUINT_SMILE, BLUR_AESTHETIC_BOKEH — no exclusion, informational only
 ];
@@ -42,6 +43,7 @@ function getExclusionGroupKey(deductions: string[]): string {
 export default function Gallery() {
   const t = useT("gallery");
   const tExport = useT("export");
+  const [galleryTheme, setGalleryTheme] = useGalleryTheme();
 
   const photos = useStore((s) => s.photos);
   const groups = useStore((s) => s.groups);
@@ -308,26 +310,27 @@ export default function Gallery() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 80 }}>
+    <div data-theme={galleryTheme} style={{ minHeight: "100vh", background: "var(--bg-base)", color: "var(--text-primary)", paddingBottom: 80 }}>
       {/* Sticky header */}
-      <div style={{ position: "sticky", top: isFreeBeta() ? 28 : 0, zIndex: 100, background: "var(--bg)",
-        borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
+      <div style={{ position: "sticky", top: isFreeBeta() ? 28 : 0, zIndex: 100, background: "var(--bg-base)",
+        borderBottom: "1px solid var(--border-subtle)", padding: "12px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13 }}
             onClick={() => { setStep("landing"); useStore.getState().reset(); }}>
             ← {t("back")}
           </button>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "var(--accent2)" }}>딸깍픽스</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}>딸깍픽스</span>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: canReextract ? "var(--text2)" : "var(--low)" }}>
+            <span style={{ fontSize: 12, color: canReextract ? "var(--text-secondary)" : "var(--critical)" }}>
               {canReextract ? t("reextractLeft", { count: MAX_REEXTRACT - reextractCount }) : t("reextractExhausted")}
             </span>
             <button className="btn-secondary" style={{ padding: "6px 14px", fontSize: 13, opacity: canReextract && !reextracting ? 1 : 0.4 }}
               disabled={!canReextract || reextracting} onClick={() => setShowPanel(!showPanel)}>
-              ⚙ 조건 변경 & 재추출
+              조건 변경 · 재추출
             </button>
           </div>
+          <GalleryThemeToggle theme={galleryTheme} onChange={setGalleryTheme} />
           <LangToggle />
         </div>
 
@@ -376,7 +379,7 @@ export default function Gallery() {
                   <button key={value} onClick={() => setMaxPerGroup(value)}
                     style={{ padding: "5px 10px", borderRadius: "var(--radius-lg)", fontSize: 12,
                       border: `2px solid ${maxPerGroup === value ? "var(--accent)" : "var(--border)"}`,
-                      background: maxPerGroup === value ? "rgba(45,67,86,0.15)" : "transparent",
+                      background: maxPerGroup === value ? "rgba(10, 10, 11,0.15)" : "transparent",
                       color: maxPerGroup === value ? "var(--accent2)" : "var(--text2)",
                       fontWeight: 600, cursor: "pointer" }}>{label}</button>
                 ))}
@@ -441,7 +444,7 @@ export default function Gallery() {
                 padding: "6px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer",
                 border: `1.5px solid ${viewMode === key ? (key === "excluded" ? "#ef4444" : "var(--accent)") : "var(--border)"}`,
                 background: viewMode === key
-                  ? (key === "excluded" ? "rgba(239,68,68,0.12)" : "rgba(45,67,86,0.15)")
+                  ? (key === "excluded" ? "rgba(239,68,68,0.12)" : "rgba(10, 10, 11,0.15)")
                   : "transparent",
                 color: viewMode === key
                   ? (key === "excluded" ? "#ef4444" : "var(--accent2)")
@@ -586,7 +589,7 @@ export default function Gallery() {
                                 onClick={() => { track({ name: "photo_toggle", params: { action: "select" } }); togglePhotoSelected(photo.id); }}
                                 style={{
                                   position: "absolute", top: 6, left: 6,
-                                  background: "rgba(45,67,86,0.9)", color: "white",
+                                  background: "rgba(10, 10, 11,0.9)", color: "white",
                                   border: "none", borderRadius: "var(--radius-md)", cursor: "pointer",
                                   fontSize: 10, fontWeight: 700, padding: "3px 7px",
                                 }}
@@ -750,20 +753,22 @@ export default function Gallery() {
         ) : null;
       })()}
 
-      {/* Photo detail modal */}
+      {/* Photo detail modal — 사진 우선 화면이라 항상 다크 보조 (DESIGN_DIRECTION v2.2 §4-3) */}
       {modalPhoto && (
-        <PhotoDetailModal
-          photo={modalPhoto}
-          allPhotos={displayedPhotos}
-          groupBestPhoto={getGroupBest(modalPhoto.id)}
-          onClose={() => setModalPhotoId(null)}
-          onNavigate={(id) => setModalPhotoId(id)}
-          onToggleSelect={(id) => togglePhotoSelected(id)}
-          onJumpToGroupBest={() => {
-            const best = getGroupBest(modalPhoto.id);
-            if (best) setModalPhotoId(best.id);
-          }}
-        />
+        <div data-theme="dark" style={{ color: "var(--text-primary)" }}>
+          <PhotoDetailModal
+            photo={modalPhoto}
+            allPhotos={displayedPhotos}
+            groupBestPhoto={getGroupBest(modalPhoto.id)}
+            onClose={() => setModalPhotoId(null)}
+            onNavigate={(id) => setModalPhotoId(id)}
+            onToggleSelect={(id) => togglePhotoSelected(id)}
+            onJumpToGroupBest={() => {
+              const best = getGroupBest(modalPhoto.id);
+              if (best) setModalPhotoId(best.id);
+            }}
+          />
+        </div>
       )}
 
       {/* ── 플로팅 배너 (AI 판단이 아쉬우신가요?) ── */}
@@ -831,7 +836,7 @@ export default function Gallery() {
           <div style={{ position: "relative", width: 72, height: 72 }}>
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: "4px solid rgba(45,67,86,0.2)",
+              border: "4px solid rgba(10, 10, 11,0.2)",
             }} />
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
@@ -889,7 +894,7 @@ export default function Gallery() {
               color: ctxPhoto.isSelected ? "#ef4444" : "var(--accent2)",
               fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45,67,86,0.12)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(10, 10, 11,0.12)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
           >
             {ctxPhoto.isSelected ? "✕  선택 제외" : "✓  선택에 포함"}
@@ -901,10 +906,10 @@ export default function Gallery() {
               border: "none", cursor: "pointer", fontSize: 13, color: "var(--text)",
               display: "flex", alignItems: "center", gap: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45,67,86,0.12)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(10, 10, 11,0.12)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
           >
-            🔍  자세히 보기
+            자세히 보기
           </button>
         </div>
       )}

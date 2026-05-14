@@ -27,6 +27,7 @@ import NicknameCaptureModal from "./NicknameCaptureModal";
 import UserAddress from "./UserAddress";
 import GroupCompareModal from "./GroupCompareModal";
 import PhotoDetailModal from "./PhotoDetailModal";
+import GalleryThemeToggle, { useGalleryTheme } from "./GalleryThemeToggle";
 import { recordSession, shouldShowNicknameModal, loadProfile } from "../lib/userProfile";
 import { isFreeBeta, FREE_BETA_COPY } from "../lib/freeBetaConfig";
 import { saveZip, loadZip, type CachedZip } from "../lib/zipManager";
@@ -71,6 +72,7 @@ type GalleryView = "selected" | "excluded" | "all";
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
 export default function FolderGallery() {
+  const [galleryTheme, setGalleryTheme] = useGalleryTheme();
   const setStep         = useStore((s) => s.setStep) as (step: AppState["step"]) => void;
   const flow            = useStore((s) => s.flow);
   const folderSessions  = useStore((s) => s.folderSessions);
@@ -471,7 +473,7 @@ export default function FolderGallery() {
   }, [activeSession, updateSession]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+    <div data-theme={galleryTheme} style={{ minHeight: "100vh", background: "var(--bg-base)", color: "var(--text-primary)", display: "flex", flexDirection: "column" }}>
 
       {/* ── 헤더 ── */}
       <div style={{
@@ -501,6 +503,7 @@ export default function FolderGallery() {
                   : exported ? "✓ 완료." : isFreeBeta() ? FREE_BETA_COPY.downloadButton : `ZIP 저장 (${totalSelected}장)`}
             </button>
           )}
+          <GalleryThemeToggle theme={galleryTheme} onChange={setGalleryTheme} />
           <LangToggle />
         </div>
       </div>
@@ -543,7 +546,7 @@ export default function FolderGallery() {
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "2px 6px",
                   borderRadius: "var(--radius-md)",
-                  background: "rgba(45,67,86,0.15)",
+                  background: "rgba(10, 10, 11,0.15)",
                   color: "var(--accent2)",
                 }}>
                   {selCount}장
@@ -616,14 +619,14 @@ export default function FolderGallery() {
             <div style={{
               display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
               padding: "12px 16px", borderRadius: "var(--radius-md)",
-              background: "rgba(45,67,86,0.08)",
-              border: "1px solid rgba(45,67,86,0.2)",
+              background: "rgba(10, 10, 11,0.08)",
+              border: "1px solid rgba(10, 10, 11,0.2)",
             }}>
               <div>
                 <span style={{
                   fontSize: 11, fontWeight: 700, padding: "3px 8px",
                   borderRadius: "var(--radius-sm)",
-                  background: "rgba(45,67,86,0.15)",
+                  background: "rgba(10, 10, 11,0.15)",
                   color: "var(--accent2)",
                   marginRight: 8,
                 }}>
@@ -692,7 +695,7 @@ export default function FolderGallery() {
                         overflow: "hidden",
                         aspectRatio: "1",
                         background: "var(--bg3)",
-                        border: `2px solid ${isSelected ? "rgba(45,67,86,0.5)" : "rgba(128,128,160,0.2)"}`,
+                        border: `2px solid ${isSelected ? "rgba(10, 10, 11,0.5)" : "rgba(128,128,160,0.2)"}`,
                         cursor: "pointer",
                         opacity: isSelected ? 1 : 0.6,
                         transition: "opacity 0.15s, border-color 0.15s",
@@ -777,7 +780,7 @@ export default function FolderGallery() {
                             position: "absolute", top: 4, right: dupe ? 28 : 4,
                             fontSize: 9, fontWeight: 700, padding: "2px 5px",
                             borderRadius: "var(--radius-md)",
-                            background: "rgba(45,67,86,0.85)",
+                            background: "rgba(10, 10, 11,0.85)",
                             color: "#fff",
                             cursor: "pointer",
                           }}
@@ -912,23 +915,25 @@ export default function FolderGallery() {
         ) : null;
       })()}
 
-      {/* 사진 상세 모달 — Flow B/C 메인 누락 해소 (PHASE1_PLAN ⑥) */}
+      {/* 사진 상세 모달 — 사진 우선 화면이라 항상 다크 보조 (DESIGN_DIRECTION v2.2 §4-3) */}
       {modalPhoto && activeSession && (
-        <PhotoDetailModal
-          photo={modalPhoto}
-          allPhotos={[...activeSession.photos.values()]}
-          groupBestPhoto={getGroupBestInSession(modalPhoto.id)}
-          onClose={() => setModalPhotoId(null)}
-          onNavigate={(id) => setModalPhotoId(id)}
-          onToggleSelect={(id) => {
-            const p = activeSession.photos.get(id);
-            if (p) togglePhoto(activeSession, p);
-          }}
-          onJumpToGroupBest={() => {
-            const best = getGroupBestInSession(modalPhoto.id);
-            if (best) setModalPhotoId(best.id);
-          }}
-        />
+        <div data-theme="dark" style={{ color: "var(--text-primary)" }}>
+          <PhotoDetailModal
+            photo={modalPhoto}
+            allPhotos={[...activeSession.photos.values()]}
+            groupBestPhoto={getGroupBestInSession(modalPhoto.id)}
+            onClose={() => setModalPhotoId(null)}
+            onNavigate={(id) => setModalPhotoId(id)}
+            onToggleSelect={(id) => {
+              const p = activeSession.photos.get(id);
+              if (p) togglePhoto(activeSession, p);
+            }}
+            onJumpToGroupBest={() => {
+              const best = getGroupBestInSession(modalPhoto.id);
+              if (best) setModalPhotoId(best.id);
+            }}
+          />
+        </div>
       )}
     </div>
   );

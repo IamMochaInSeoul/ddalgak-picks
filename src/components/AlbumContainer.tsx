@@ -538,7 +538,7 @@ export default function AlbumContainer() {
           {/* 파싱 중 */}
           {parsingTemplate && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-              background: "rgba(45,67,86,0.08)", border: "1px solid rgba(45,67,86,0.25)", borderRadius: "var(--radius-md)", }}>
+              background: "rgba(10, 10, 11,0.08)", border: "1px solid rgba(10, 10, 11,0.25)", borderRadius: "var(--radius-md)", }}>
               <div style={{ width: 20, height: 20, borderRadius: "50%",
                 border: "3px solid transparent", borderTopColor: "var(--accent)",
                 animation: "spinReextract 0.9s linear infinite", flexShrink: 0 }} />
@@ -698,7 +698,7 @@ export default function AlbumContainer() {
           {/* 진행 중 배너 */}
           {(processingSource || driveLoading) && (
             <div style={{ marginBottom: 12, padding: "12px 16px",
-              background: "rgba(45,67,86,0.08)", border: "1px solid rgba(45,67,86,0.25)",
+              background: "rgba(10, 10, 11,0.08)", border: "1px solid rgba(10, 10, 11,0.25)",
               borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%",
                 border: "3px solid transparent", borderTopColor: "var(--accent)",
@@ -731,7 +731,7 @@ export default function AlbumContainer() {
             style={{
               border: `2px dashed ${isDragOver ? "var(--accent)" : "var(--border)"}`,
               borderRadius: "var(--radius-lg)", padding: "20px",
-              background: isDragOver ? "rgba(45,67,86,0.08)" : "transparent",
+              background: isDragOver ? "rgba(10, 10, 11,0.08)" : "transparent",
               textAlign: "center", marginBottom: 14, transition: "all 0.2s",
             }}
           >
@@ -902,7 +902,7 @@ export default function AlbumContainer() {
                     <div key={slot.id} onClick={() => setActiveSlotId(slot.id)}
                       style={{ borderRadius: "var(--radius-md)", padding: "10px 12px", cursor: "pointer",
                         border: `2px solid ${isActive ? "var(--accent)" : filled === slot.capacity ? "rgba(107,139,90,0.4)" : "var(--border)"}`,
-                        background: isActive ? "rgba(45,67,86,0.12)" : "var(--bg)", transition: "border-color 0.15s" }}>
+                        background: isActive ? "rgba(10, 10, 11,0.12)" : "var(--bg)", transition: "border-color 0.15s" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: filled > 0 ? 8 : 0 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{slot.slotName}</span>
                         <span style={{ fontSize: 11, color: pct === 1 ? "var(--high)" : "var(--text2)" }}>{filled}/{slot.capacity}장</span>
@@ -947,13 +947,13 @@ export default function AlbumContainer() {
             <button onClick={() => setActiveSourceId(null)}
               style={{ padding: "5px 14px", borderRadius: "var(--radius-lg)", fontSize: 12, cursor: "pointer",
                 border: `1.5px solid ${activeSourceId === null ? "var(--accent)" : "var(--border)"}`,
-                background: activeSourceId === null ? "rgba(45,67,86,0.15)" : "transparent",
+                background: activeSourceId === null ? "rgba(10, 10, 11,0.15)" : "transparent",
                 color: activeSourceId === null ? "var(--accent2)" : "var(--text2)", fontWeight: 600 }}>전체</button>
             {sources.map((src) => (
               <button key={src.id} onClick={() => setActiveSourceId(src.id)}
                 style={{ padding: "5px 14px", borderRadius: "var(--radius-lg)", fontSize: 12, cursor: "pointer",
                   border: `1.5px solid ${activeSourceId === src.id ? "var(--accent)" : "var(--border)"}`,
-                  background: activeSourceId === src.id ? "rgba(45,67,86,0.15)" : "transparent",
+                  background: activeSourceId === src.id ? "rgba(10, 10, 11,0.15)" : "transparent",
                   color: activeSourceId === src.id ? "var(--accent2)" : "var(--text2)", fontWeight: 600 }}>
                 {src.name} ({src.photos.length})
               </button>

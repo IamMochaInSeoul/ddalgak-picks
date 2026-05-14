@@ -1,99 +1,209 @@
 /**
  * tokens.css — 딸깍픽스 디자인 토큰
- * "다크룸의 큐레이터" 비주얼 시스템 (DESIGN_DIRECTION.md §3-1~§3-5)
  *
- * Stage A: 이 파일을 main.tsx에서 globals.css보다 먼저 import.
- * Stage B: 각 컴포넌트가 --bg/--text 등 레거시 별칭 대신 이 토큰을 직접 참조.
+ * v2.2 (2026-05-14): "Quiet Precision"
+ *   - 큐레이터·다크 컨셉 폐기
+ *   - 라이트 메인 (#FAFAF8) + 다크 보조 (사진 우선 화면)
+ *   - Graphite #1A1A1B 단일 액센트 (모노크롬)
+ *   - Apple/Arc/Stripe 톤의 미세 그림자·8px 모서리·부드러운 ease
+ *
+ * 상위 문서: DESIGN_DIRECTION.md v2.2 §3
+ *
+ * 다크 보조 적용 방법:
+ *   해당 컴포넌트 루트에 data-theme="dark" 속성 부여 → [data-theme="dark"]
+ *   셀렉터가 *-dark 토큰으로 surface·text·border를 덮어쓴다.
  */
 
 :root {
-  /* ── Surface ───────────────────────────────────────────────────────────── */
-  /* 딥 네이비 다크 톤. 순수 #000은 피한다 (피로). 차갑고 전문적인 기를 품는다. */
-  --bg-base:     #0D0F12;   /* 메인 배경 */
-  --bg-elevated: #131720;   /* 카드·패널 */
-  --bg-overlay:  #1A1F28;   /* 모달·드롭다운·호버 */
+  /* ── Surface (라이트 메인) ───────────────────────────────────────── */
+  --bg-base:        #FAFAF8;   /* 메인 배경 — 따뜻한 오프화이트 */
+  --bg-elevated:    #FFFFFF;   /* 카드·패널 (한 단계 띄움) */
+  --bg-overlay:     #F2F1ED;   /* 호버·드롭다운·미세 강조 */
+  --bg-sunken:      #EFEEEA;   /* 인풋·코드 블록 등 한 단계 내림 */
 
-  /* ── Borders ───────────────────────────────────────────────────────────── */
-  --border-subtle: #1E2430;   /* 기본 구분선 — 거의 안 보이게 */
-  --border-strong: #2D3748;   /* 강조 구분선 */
+  /* ── Surface (다크 보조 — 사진 우선 화면) ──────────────────────── */
+  --bg-base-dark:     #0F0F10;
+  --bg-elevated-dark: #18181A;
+  --bg-overlay-dark:  #222225;
 
-  /* ── Text ──────────────────────────────────────────────────────────────── */
-  /* 차가운 오프화이트. 네이비 배경과의 조화. */
-  --text-primary:   #EDF0F5;   /* 본문 */
-  --text-secondary: #9FAABF;   /* 보조 정보·캡션 — contrast ~4.6:1 (WCAG AA) */
-  --text-tertiary:  #6B7A94;   /* 메타데이터·타임스탬프 — contrast ~3.5:1 */
-  --text-disabled:  #2D3748;
+  /* ── Borders ─────────────────────────────────────────────────────── */
+  --border-subtle: #E5E4E0;   /* 기본 구분선 */
+  --border-strong: #C8C6BF;   /* 강조 구분선·인풋 */
+  --border-focus:  var(--accent);
 
-  /* ── Accent — 잉크 블루 ─────────────────────────────────────────────── */
-  /* 결제 CTA·진행 중인 상태·중요 강조에만 사용. 일반 버튼은 모노크롬. */
-  --accent:      #2D4356;
-  --accent-soft: rgba(45, 67, 86, 0.12);   /* 12% — 호버 배경 등 */
-  --accent-dim:  #3E5670;   /* 보조 강조 텍스트용 (구 --accent2 대체) */
+  --border-subtle-dark: #2A2A2D;
+  --border-strong-dark: #3D3D40;
 
-  /* ── Status ────────────────────────────────────────────────────────────── */
-  --critical: #B23B2A;   /* 옥스블러드. 형광 빨강 금지. */
-  --warning:  #C8923D;   /* 액센트와 통일감 */
+  /* ── Text (라이트 베이스 기준 — WCAG AA 이상) ─────────────────── */
+  --text-primary:   #0A0A0B;   /* 본문·헤드라인 — 16.8:1 vs bg-base (AAA) */
+  --text-secondary: #56565A;   /* 보조 정보·라벨   —  7.2:1 (AAA) */
+  --text-tertiary:  #8A8A8E;   /* 메타·캡션         —  4.7:1 (AA) */
+  --text-disabled:  #C0C0BD;   /* 비활성 (의도적으로 약함) */
+  --text-on-accent: #FFFFFF;   /* 액센트 위 텍스트 — 18.7:1 (AAA) */
 
-  /* ── Photo overlay ─────────────────────────────────────────────────────── */
-  --photo-overlay: rgba(13, 15, 18, 0.72);
+  --text-primary-dark:   #F4F4F5;
+  --text-secondary-dark: #A8A8AC;
+  --text-tertiary-dark:  #6D6D72;
 
-  /* ── Typography ─────────────────────────────────────────────────────────── */
-  --font-display:
-    "Spectral", "Noto Serif KR", "Nanum Myeongjo",
-    Georgia, serif;
+  /* ── Accent — Graphite (모노크롬, 2026-05-14 확정) ───────────────── */
+  /* 사진을 위해 시스템 컬러는 최대한 양보. 상태 신호는 status 토큰으로. */
+  --accent:       #1A1A1B;
+  --accent-hover: #000000;
+  --accent-soft:  rgba(26, 26, 27, 0.10);    /* 호버 배경·뱃지 */
+  --accent-quiet: rgba(26, 26, 27, 0.04);    /* 매우 옅은 강조 */
+
+  /* ── Status ──────────────────────────────────────────────────────── */
+  --critical:      #D94B3D;
+  --critical-soft: rgba(217, 75, 61, 0.10);
+  --success:       #2F8F5F;
+  --success-soft:  rgba(47, 143, 95, 0.10);
+  --warning:       #B47B1E;
+  --warning-soft:  rgba(180, 123, 30, 0.10);
+
+  /* ── Photo overlay ──────────────────────────────────────────────── */
+  --photo-overlay-light: rgba(255, 255, 255, 0.88);
+  --photo-overlay-dark:  rgba(15, 15, 16, 0.80);
+
+  /* ── Shadows (Apple/Stripe 톤 — 위계만, 강조 X) ──────────────────── */
+  --shadow-xs:    0 1px 2px rgba(10, 10, 11, 0.04);
+  --shadow-sm:    0 1px 3px rgba(10, 10, 11, 0.06), 0 1px 2px rgba(10, 10, 11, 0.04);
+  --shadow-md:    0 4px 12px rgba(10, 10, 11, 0.08), 0 2px 4px rgba(10, 10, 11, 0.04);
+  --shadow-lg:    0 12px 32px rgba(10, 10, 11, 0.12), 0 4px 8px rgba(10, 10, 11, 0.06);
+  --shadow-modal: 0 24px 64px rgba(10, 10, 11, 0.20), 0 8px 16px rgba(10, 10, 11, 0.08);
+
+  /* ── Typography ─────────────────────────────────────────────────── */
   --font-sans:
     "Pretendard Variable", "Pretendard",
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    -apple-system, BlinkMacSystemFont, "Inter",
+    "Segoe UI", "Noto Sans KR", sans-serif;
   --font-mono:
     "JetBrains Mono", "IBM Plex Mono", "SF Mono",
     ui-monospace, monospace;
 
-  /* 스케일 — clamp()로 모바일 자동 축소, 데스크톱 max값은 기존과 동일 */
+  /* v2.1 산세리프 결정 유지 — display는 sans로 매핑 (호환 보존) */
+  --font-display: var(--font-sans);
+
+  /* 사이즈 스케일 (Apple HIG·Stripe 톤) */
+  --text-2xs:  11px;
   --text-xs:   12px;
   --text-sm:   13px;
-  --text-base: clamp(15px, 1.5vw, 16px);
-  --text-md:   clamp(16px, 1.6vw, 18px);
-  --text-lg:   clamp(20px, 2.2vw, 24px);
-  --text-xl:   clamp(24px, 3.5vw, 36px);
-  --display-1: clamp(36px, 5vw, 56px);
-  --display-2: clamp(48px, 7vw, 80px);
+  --text-base: 15px;
+  --text-md:   17px;
+  --text-lg:   20px;
+  --text-xl:   clamp(24px, 2.4vw, 28px);
+  --text-2xl:  clamp(28px, 3.2vw, 36px);
+  --display-1: clamp(40px, 5.5vw, 64px);
+  --display-2: clamp(48px, 7.5vw, 88px);
 
-  --leading-tight: 1.1;
-  --leading-base:  1.55;
-  --tracking-display:   -0.02em;
-  --tracking-uppercase:  0.12em;
+  /* 굵기 (Pretendard Variable) */
+  --weight-regular:   400;
+  --weight-medium:    500;
+  --weight-semibold:  600;
+  --weight-bold:      700;
+  --weight-extrabold: 800;
 
-  /* ── Spacing ────────────────────────────────────────────────────────────── */
+  /* 행간 */
+  --leading-tight:   1.15;
+  --leading-snug:    1.35;
+  --leading-normal:  1.55;
+  --leading-relaxed: 1.7;
+  /* v2.1 호환 별칭 */
+  --leading-base:    var(--leading-normal);
+
+  /* 자간 */
+  --tracking-tight:     -0.02em;
+  --tracking-snug:      -0.01em;
+  --tracking-normal:     0em;
+  --tracking-wide:       0.04em;
+  --tracking-uppercase:  0.10em;
+  /* v2.1 호환 별칭 */
+  --tracking-display:    var(--tracking-tight);
+
+  /* ── Spacing ────────────────────────────────────────────────────── */
+  --space-0:  0;
   --space-1:  4px;
   --space-2:  8px;
   --space-3:  12px;
   --space-4:  16px;
+  --space-5:  20px;
   --space-6:  24px;
   --space-8:  32px;
+  --space-10: 40px;
   --space-12: 48px;
-  --space-16: clamp(32px, 5vw, 64px);
-  --space-24: clamp(48px, 7vw, 96px);
-  --space-32: clamp(64px, 9vw, 128px);
+  --space-16: clamp(40px, 5vw, 64px);
+  --space-20: clamp(48px, 6vw, 80px);
+  --space-24: clamp(64px, 8vw, 96px);
+  --space-32: clamp(80px, 10vw, 128px);
 
-  /* ── Radii & Shadow ─────────────────────────────────────────────────────── */
-  --radius-sm:    2px;   /* 버튼·인풋 — 통통 튀지 않게 */
-  --radius-md:    4px;   /* 카드 */
-  --radius-lg:    8px;   /* 모달 */
-  --radius-photo: 0;     /* 사진은 절대 둥글게 자르지 않는다 */
+  /* 컨테이너 max-width */
+  --container-narrow: 720px;
+  --container-base:   960px;
+  --container-wide:   1280px;
+  --container-full:   100%;
 
-  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.5);
+  /* ── Radii (Apple/Arc 톤) ───────────────────────────────────────── */
+  --radius-xs:    2px;
+  --radius-sm:    4px;
+  --radius-md:    8px;    /* 카드·버튼 */
+  --radius-lg:    12px;   /* 큰 카드·드롭다운 */
+  --radius-xl:    16px;   /* 모달 */
+  --radius-photo: 4px;    /* 사진 미세 라운드 (v2.1 직각 폐기) */
+  --radius-full:  9999px;
 
-  /* ── Motion ─────────────────────────────────────────────────────────────── */
-  --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+  /* ── Motion (Apple-style ease) ───────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-decel:    cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-accel:    cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --dur-fast: 120ms;   /* 호버 */
-  --dur-base: 240ms;   /* 모달·탭 전환 */
-  --dur-slow: 480ms;   /* 페이지 전환·큰 reveal */
+  --dur-instant: 80ms;
+  --dur-fast:    160ms;
+  --dur-base:    240ms;
+  --dur-slow:    360ms;
+  --dur-slower:  560ms;
 
-  /* ── Breakpoints (DESIGN_DIRECTION §10-1) ───────────────────────────────── */
+  /* ── Breakpoints (DESIGN_DIRECTION §9) ──────────────────────────── */
   --bp-mobile:  480px;
   --bp-tablet:  768px;
   --bp-desktop: 1024px;
-  --bp-wide:    1280px;   /* 디자인 기준 */
+  --bp-wide:    1280px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * 다크 보조 — 사진 우선 화면 (PhotoDetailModal·풀스크린 뷰어·갤러리 토글)
+ * 적용: <div data-theme="dark"> ... </div>
+ * ───────────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-base:        var(--bg-base-dark);
+  --bg-elevated:    var(--bg-elevated-dark);
+  --bg-overlay:     var(--bg-overlay-dark);
+  --bg-sunken:      var(--bg-base-dark);
+
+  --text-primary:   var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --text-tertiary:  var(--text-tertiary-dark);
+
+  --border-subtle:  var(--border-subtle-dark);
+  --border-strong:  var(--border-strong-dark);
+
+  /* 액센트는 다크 위에서도 동일 톤 유지 — Graphite는 다크에서 보이지
+     않으므로 다크 보조에서는 흰색을 액센트로 사용한다. */
+  --accent:         #F4F4F5;
+  --accent-hover:   #FFFFFF;
+  --accent-soft:    rgba(244, 244, 245, 0.10);
+  --accent-quiet:   rgba(244, 244, 245, 0.04);
+  --text-on-accent: var(--bg-base-dark);
+}
+
+/* 모바일 타이포 스케일 (DESIGN_DIRECTION §9-2) */
+@media (max-width: 768px) {
+  :root {
+    --display-1: 40px;
+    --display-2: 56px;
+    --text-2xl:  28px;
+    --text-xl:   24px;
+    --text-base: 16px;   /* 모바일 가독성 */
+    --space-24:  48px;
+    --space-32:  64px;
+  }
 }

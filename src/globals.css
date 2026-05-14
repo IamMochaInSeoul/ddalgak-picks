@@ -1,36 +1,36 @@
 /**
  * globals.css — 컴포넌트 클래스 + 레거시 변수 별칭
  *
- * 레거시 변수(--bg, --text, --accent …)는 tokens.css의 새 토큰으로 매핑된다.
- * 기존 컴포넌트는 수정 없이 계속 동작하되, 색상이 큐레이터 팔레트로 전환된다.
- * Stage B에서 컴포넌트들이 --bg-base 등 canonical 토큰을 직접 참조하면
- * 이 별칭 블록은 제거할 수 있다.
+ * v2.2 (2026-05-14):
+ *   - 큐레이터·다크 컨셉 폐기 → 라이트 메인 + Graphite 액센트
+ *   - 레거시 별칭(--bg, --text, --accent…)은 새 토큰의 라이트 값으로 매핑
+ *   - 컴포넌트 클래스(.btn-primary, .badge, .photo-card…)는 v2.2 톤으로 갱신
+ *   - 기존 컴포넌트는 수정 없이 계속 동작하되, 색상이 라이트 팔레트로 전환
  *
- * [Stage A 인지된 이슈 — Stage B 후속 작업 필요]
- * - .btn-primary, .photo-card.selected, .badge-high 등은 --accent(금색)을 사용.
- *   기존 보라색 인상이 금색으로 바뀐다. 이는 의도된 톤 전환이며,
- *   Stage B에서 버튼·배지 클래스 전체를 재설계한다.
- * - Landing.tsx 카드의 accentRgb 값은 제거됨 (v0.5.1-pre 갭 패치).
- *   잉크 블루(#2D4356)로 전환 완료.
+ * 향후 (v0.6.1+ 점진):
+ *   컴포넌트가 canonical 토큰(--bg-base, --text-primary 등)을 직접 참조하면
+ *   레거시 별칭 블록은 제거 가능. 그때까지 호환 유지.
+ *
+ * 상위 문서: DESIGN_DIRECTION.md v2.2 §3
  */
 
 :root {
-  /* ── 레거시 별칭 → 새 토큰 매핑 ─────────────────────────────────────── */
-  --bg:         var(--bg-base);
-  --bg2:        var(--bg-elevated);
-  --bg3:        var(--bg-overlay);
-  --text:       var(--text-primary);
-  --text2:      var(--text-secondary);
-  --border:     var(--border-subtle);
+  /* ── 레거시 별칭 → 새 토큰 매핑 (모두 라이트 베이스) ────────────── */
+  --bg:         var(--bg-base);          /* #FAFAF8 */
+  --bg2:        var(--bg-elevated);      /* #FFFFFF */
+  --bg3:        var(--bg-overlay);       /* #F2F1ED */
+  --text:       var(--text-primary);     /* #0A0A0B */
+  --text2:      var(--text-secondary);   /* #56565A */
+  --border:     var(--border-subtle);    /* #E5E4E0 */
 
-  /* 액센트: 보라에서 금색으로 전환 (의도된 큐레이터 톤 변경) */
-  --accent:     var(--accent);        /* #2D4356 (잉크 블루) */
-  --accent2:    var(--accent-dim);    /* #3E5670 */
+  /* 액센트: 잉크 블루 → Graphite #1A1A1B (모노크롬, 2026-05-14) */
+  /* --accent는 tokens.css에서 정의 (#1A1A1B). 별칭 재정의 불필요. */
+  --accent2:    var(--text-secondary);   /* 보조 텍스트 톤 (구 잉크 블루 dim) */
 
-  /* 상태 컬러는 기존 유지 (갤러리 배지 등에서 사용) */
-  --high: #6B8B5A;   /* 차분한 올리브 그린, 형광 회피 */
-  --med:  var(--warning);
-  --low:  var(--critical);
+  /* 상태 컬러 (라이트 베이스에서도 충분한 콘트라스트) */
+  --high: var(--success);                /* #2F8F5F — 차분한 녹 */
+  --med:  var(--warning);                /* #B47B1E */
+  --low:  var(--critical);               /* #D94B3D */
 
   /* 하위 호환 */
   --background: var(--bg-base);
@@ -42,148 +42,183 @@ html, body {
   color:        var(--text-primary);
   font-family:  var(--font-sans);
   font-size:    var(--text-base);
-  line-height:  var(--leading-base);
+  line-height:  var(--leading-normal);
 
-  /* iOS Safari 기본 처리 (DESIGN_DIRECTION §10-5) */
+  /* iOS Safari 기본 처리 */
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+
+  /* 라이트 베이스에서 텍스트 안티에일리어싱 살짝 보정 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 100dvh 사용 가능 환경 우대 (iOS 16+ Dynamic Viewport) */
 @supports (height: 100dvh) {
-  .full-height {
-    min-height: 100dvh;
-  }
+  .full-height { min-height: 100dvh; }
 }
 @supports not (height: 100dvh) {
-  .full-height {
-    min-height: 100vh;
-  }
+  .full-height { min-height: 100vh; }
 }
 
-/* Sticky CTA 영역에서 iOS Safe Area 보장 */
+/* Sticky CTA 영역 iOS Safe Area */
 .sticky-cta {
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  background:    var(--bg-base);
+  border-top:    1px solid var(--border-subtle);
 }
 
-/* 버튼·카드 클릭 영역에서 300ms 딜레이 제거 */
+/* 버튼·카드 클릭 영역 300ms 딜레이 제거 */
 button, [role="button"], .btn-primary, .btn-secondary, .photo-card {
   touch-action: manipulation;
 }
 
+/* ── 카드 ───────────────────────────────────────────────────────── */
 .card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding:       var(--space-6);
+  box-shadow:    var(--shadow-xs);
+  transition:    box-shadow var(--dur-fast) var(--ease-standard),
+                 border-color var(--dur-fast) var(--ease-standard);
+}
+.card:hover {
+  box-shadow:   var(--shadow-sm);
+  border-color: var(--border-strong);
 }
 
+/* ── 버튼 ───────────────────────────────────────────────────────── */
 .btn-primary {
-  background: var(--accent);
-  color: #0E0D0B;   /* 골드 위 어두운 텍스트 (가독성) */
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 12px 24px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity var(--dur-fast) var(--ease-standard);
+  background:    var(--accent);          /* Graphite #1A1A1B */
+  color:         var(--text-on-accent);  /* 흰색 */
+  border:        none;
+  border-radius: var(--radius-md);
+  padding:       12px 24px;
+  font-family:   var(--font-sans);
+  font-size:     var(--text-base);
+  font-weight:   var(--weight-semibold);
+  cursor:        pointer;
+  transition:    background-color var(--dur-fast) var(--ease-standard),
+                 box-shadow       var(--dur-fast) var(--ease-standard);
 }
-.btn-primary:hover { opacity: 0.85; }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:disabled {
+  background: var(--text-disabled);
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 .btn-secondary {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 10px 20px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-standard),
-              color       var(--dur-fast) var(--ease-standard);
+  background:    var(--bg-elevated);
+  color:         var(--text-primary);
+  border:        1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding:       10px 20px;
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  font-weight:   var(--weight-medium);
+  cursor:        pointer;
+  transition:    border-color var(--dur-fast) var(--ease-standard),
+                 background-color var(--dur-fast) var(--ease-standard);
 }
-.btn-secondary:hover { border-color: var(--accent); color: var(--text-primary); }
+.btn-secondary:hover {
+  border-color: var(--accent);
+  background:   var(--bg-overlay);
+}
 
+/* ── 뱃지 ───────────────────────────────────────────────────────── */
 .badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  background: #1a1a2e;
-  color: #d0d0f0;
-  border: 1px solid #3a3a5a;
+  display:       inline-block;
+  padding:       2px 8px;
+  border-radius: var(--radius-sm);
+  font-size:     var(--text-2xs);
+  font-weight:   var(--weight-semibold);
+  background:    var(--bg-overlay);
+  color:         var(--text-secondary);
+  border:        1px solid var(--border-subtle);
 }
-.badge-high { border-color: var(--high); color: var(--high); }
-.badge-medium { border-color: var(--med); color: var(--med); }
-.badge-low { border-color: var(--low); color: var(--low); }
+.badge-high   { background: var(--success-soft);  border-color: var(--success);  color: var(--success); }
+.badge-medium { background: var(--warning-soft);  border-color: var(--warning);  color: var(--warning); }
+.badge-low    { background: var(--critical-soft); border-color: var(--critical); color: var(--critical); }
 
+/* ── 진행률 바 ──────────────────────────────────────────────────── */
 .progress-bar {
-  width: 100%;
-  height: 6px;
-  background: var(--bg3);
-  border-radius: 3px;
-  overflow: hidden;
+  width:         100%;
+  height:        4px;
+  background:    var(--bg-overlay);
+  border-radius: var(--radius-full);
+  overflow:      hidden;
 }
 .progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  height:        100%;
+  background:    var(--accent);    /* Graphite 단색 (v2.1 그라데 폐기) */
+  border-radius: var(--radius-full);
+  transition:    width var(--dur-base) var(--ease-standard);
 }
 
+/* ── 사진 카드 ─────────────────────────────────────────────────── */
 .photo-card {
-  position: relative;
-  border-radius: var(--radius-photo);   /* 0 — 사진은 직각 */
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: border-color var(--dur-fast) var(--ease-standard);
+  position:      relative;
+  border-radius: var(--radius-photo);   /* 4px 미세 라운드 (v2.2) */
+  overflow:      hidden;
+  cursor:        pointer;
+  border:        2px solid transparent;
+  transition:    border-color var(--dur-fast) var(--ease-standard),
+                 box-shadow   var(--dur-fast) var(--ease-standard);
 }
-.photo-card:hover { border-color: var(--border-strong); }
-.photo-card.selected { border-color: var(--accent); }
+.photo-card:hover {
+  border-color: var(--border-strong);
+  box-shadow:   var(--shadow-sm);
+}
+.photo-card.selected {
+  border-color: var(--accent);    /* Graphite 2px 보더로 선택 표시 */
+}
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* ── 스크롤바 (라이트 베이스) ──────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb {
+  background:    var(--border-strong);
+  border-radius: var(--radius-full);
+  border:        2px solid var(--bg-base);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
 
-/* ── 모바일 대응 (≤640px) ─────────────────────────────────────────────────
- * 분석 후 모바일에서 인물 선택·사진 검토·ZIP 내보내기까지 완료 가능하도록.
- * 터치 타겟 최소 44px (iOS HIG), 그리드·패딩 압축.
- * ─────────────────────────────────────────────────────────────────────── */
+/* 다크 보조 영역 스크롤바 */
+[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--bg-base-dark); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-strong-dark);
+  border:     2px solid var(--bg-base-dark);
+}
+
+/* ── 모바일 대응 (≤640px) ─────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* 터치 타겟 보장 */
-  .btn-primary,
-  .btn-secondary {
+  .btn-primary, .btn-secondary {
     min-height: 44px;
     padding: 10px 16px;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
-
-  /* 카드 패딩 축소 */
   .card {
-    padding: 14px 14px;
-    border-radius: 10px;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
   }
-
-  /* 사진 카드 — 작은 화면에서 2열 유지 */
-  .photo-card {
-    border-radius: 4px;
-  }
+  .photo-card { border-radius: var(--radius-photo); }
 }
 
-/* ── 초소형 (≤380px) ─────────────────────────────────────────────────── */
+/* ── 초소형 (≤380px) ─────────────────────────────────────────── */
 @media (max-width: 380px) {
-  .btn-primary,
-  .btn-secondary {
-    font-size: 13px;
+  .btn-primary, .btn-secondary {
+    font-size: var(--text-xs);
     padding: 9px 12px;
   }
 }
 
-/* ── PhotoDetailModal 모바일 슬라이드업 ────────────────────────────────────── */
+/* ── PhotoDetailModal 모바일 슬라이드업 ────────────────────────── */
 @keyframes ddalgakSlideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
