@@ -214,7 +214,7 @@ export default function Upload() {
             border: `2px dashed ${dragging ? "var(--accent)" : "var(--border)"}`,
             borderRadius: "var(--radius-lg)", padding: "40px 24px", textAlign: "center",
             cursor: loadingFolder ? "wait" : "pointer",
-            background: dragging ? "rgba(45,67,86,0.08)" : "var(--bg2)",
+            background: dragging ? "rgba(10, 10, 11,0.08)" : "var(--bg2)",
             transition: "all 0.15s", marginBottom: 16,
           }}
         >
@@ -308,7 +308,7 @@ export default function Upload() {
               <button key={n} onClick={() => setTargetCount(n)}
                 style={{ padding: "8px 16px", borderRadius: 8,
                   border: `2px solid ${targetCount === n ? "var(--accent)" : "var(--border)"}`,
-                  background: targetCount === n ? "rgba(45,67,86,0.15)" : "transparent",
+                  background: targetCount === n ? "rgba(10, 10, 11,0.15)" : "transparent",
                   color: targetCount === n ? "var(--accent2)" : "var(--text2)",
                   fontWeight: 600, cursor: "pointer", fontSize: 14 }}>{n}</button>
             ))}
@@ -338,7 +338,7 @@ export default function Upload() {
               <button key={value} onClick={() => setMaxPerGroup(value)}
                 style={{ padding: "8px 14px", borderRadius: 8,
                   border: `2px solid ${maxPerGroup === value ? "var(--accent)" : "var(--border)"}`,
-                  background: maxPerGroup === value ? "rgba(45,67,86,0.15)" : "transparent",
+                  background: maxPerGroup === value ? "rgba(10, 10, 11,0.15)" : "transparent",
                   color: maxPerGroup === value ? "var(--accent2)" : "var(--text2)",
                   fontWeight: 600, cursor: "pointer", fontSize: 14 }}>{label}</button>
             ))}
@@ -347,8 +347,8 @@ export default function Upload() {
 
         {/* ── 선택 요약 + 예상 시간 ── */}
         {files.length > 0 && (
-          <div style={{ padding: "12px 16px", borderRadius: 8, background: "rgba(45,67,86,0.1)",
-            border: "1px solid rgba(45,67,86,0.3)", marginBottom: 16, fontSize: 13, color: "var(--accent2)" }}>
+          <div style={{ padding: "12px 16px", borderRadius: 8, background: "rgba(10, 10, 11,0.1)",
+            border: "1px solid rgba(10, 10, 11,0.3)", marginBottom: 16, fontSize: 13, color: "var(--accent2)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <span>
                 📸 {files.length}장 선택 · 목표: {targetCount}장 · 유사사진 최대: {maxPerGroup >= 9999 ? "무제한" : `${maxPerGroup}장`}
